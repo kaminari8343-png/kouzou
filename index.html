@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>かんじ たしざん</title>
+<style>
+  :root {
+    --bg: #fff8e1; --ink: #3e2723; --card: #ffffff; --main: #ff8f00;
+    --ok: #43a047; --ng: #e53935; --soft: #ffe0b2;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", sans-serif; }
+  body { display: flex; justify-content: center; }
+  #app { width: 100%; max-width: 560px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  h1 { margin: 4px 0; font-size: 1.6rem; text-align: center; }
+  .bar { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
+  .card { background: var(--card); border-radius: 20px; padding: 16px; box-shadow: 0 4px 0 var(--soft); }
+  .big-btn { font: inherit; font-size: 1.6rem; border: 0; border-radius: 18px; padding: 16px 20px;
+    background: var(--main); color: #fff; box-shadow: 0 5px 0 #c66900; cursor: pointer; width: 100%; }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c66900; }
+  .big-btn.sub { background: #8d6e63; box-shadow: 0 5px 0 #5d4037; font-size: 1.2rem; }
+  .hidden { display: none !important; }
+
+  /* mondai */
+  #formula { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .num { text-align: center; }
+  .num .k { font-size: 4.2rem; line-height: 1; }
+  .num .r { font-size: .95rem; color: #8d6e63; }
+  .op { font-size: 3rem; }
+  .q { font-size: 4.2rem; color: var(--main); }
+  #hint { text-align: center; font-size: 1.1rem; min-height: 1.6em; }
+  #choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .choice { font: inherit; background: #fff; border: 4px solid var(--soft); border-radius: 18px;
+    padding: 6px 0; cursor: pointer; text-align: center; }
+  .choice .k { font-size: 3rem; display: block; line-height: 1.1; }
+  .choice .r { font-size: .85rem; color: #8d6e63; }
+  .choice.ok { border-color: var(--ok); background: #e8f5e9; }
+  .choice.ng { border-color: var(--ng); background: #ffebee; animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  /* nazori */
+  #traceMsg { text-align: center; font-size: 1.2rem; margin: 0 0 8px; }
+  #pad { position: relative; width: 100%; aspect-ratio: 1; border: 4px dashed var(--soft); border-radius: 16px; background: #fffdf7; }
+  #guide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: min(70vw, 340px); color: #e0d6cf; user-select: none; pointer-events: none; line-height: 1; }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .row { display: flex; gap: 10px; margin-top: 10px; }
+
+  /* zukan */
+  #zukan { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .z { text-align: center; border-radius: 12px; padding: 4px 0; background: #eee; color: #bbb; }
+  .z .k { font-size: 1.8rem; line-height: 1.1; display: block; }
+  .z .r { font-size: .7rem; }
+  .z.got { background: #fff3c4; color: var(--ink); }
+  .z .c { font-size: .7rem; }
+
+  #cheer { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 4rem; pointer-events: none; opacity: 0; }
+  #cheer.show { animation: pop 1s ease-out; }
+  @keyframes pop { 0% { opacity: 0; transform: scale(.3); } 30% { opacity: 1; transform: scale(1.2); }
+    80% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>かんじ たしざん</h1>
+  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/10</span></div>
+
+  <!-- もんだい -->
+  <section id="quiz" class="card">
+    <div id="formula"></div>
+    <p id="hint"></p>
+    <div id="choices"></div>
+  </section>
+
+  <!-- なぞりがき -->
+  <section id="trace" class="card hidden">
+    <p id="traceMsg"></p>
+    <div id="pad"><div id="guide"></div><canvas id="cv"></canvas></div>
+    <div class="row">
+      <button class="big-btn sub" id="clearBtn">けす</button>
+      <button class="big-btn" id="doneBtn">できた!</button>
+    </div>
+  </section>
+
+  <!-- ずかん -->
+  <section class="card">
+    <div style="text-align:center;margin-bottom:6px">かんじずかん</div>
+    <div id="zukan"></div>
+  </section>
+</div>
+<div id="cheer"></div>
+
+<script>
+const KANJI = [
+  { n: 1, k: "一", r: "いち" }, { n: 2, k: "二", r: "に" }, { n: 3, k: "三", r: "さん" },
+  { n: 4, k: "四", r: "よん" }, { n: 5, k: "五", r: "ご" }, { n: 6, k: "六", r: "ろく" },
+  { n: 7, k: "七", r: "なな" }, { n: 8, k: "八", r: "はち" }, { n: 9, k: "九", r: "きゅう" },
+  { n: 10, k: "十", r: "じゅう" },
+];
+const byN = n => KANJI[n - 1];
+
+// ---- 保存(使えない環境でも動くように try/catch) ----
+function load() {
+  try { return JSON.parse(localStorage.getItem("kanjiTashizan") || "null") || {}; } catch (e) { return {}; }
+}
+function save() {
+  try { localStorage.setItem("kanjiTashizan", JSON.stringify(state)); } catch (e) {}
+}
+const state = Object.assign({ stars: 0, got: {}, miss: {} }, load());
+
+// ---- 音 ----
+function speak(text) {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ja-JP"; u.rate = 0.9;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function cheer(text) {
+  const c = document.getElementById("cheer");
+  c.textContent = text; c.classList.remove("show"); void c.offsetWidth; c.classList.add("show");
+}
+
+const $ = id => document.getElementById(id);
+let cur = null;      // { a, b, ans }
+let locked = false;
+
+// 苦手な答えが出やすくなる重み付き抽選
+function pickQuestion() {
+  const pool = [];
+  for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
+    const ans = a + b;
+    pool.push({ a, b, ans, w: 1 + (state.miss[ans] || 0) * 2 });
+  }
+  let total = pool.reduce((s, p) => s + p.w, 0), x = Math.random() * total;
+  for (const p of pool) { x -= p.w; if (x <= 0) return p; }
+  return pool[0];
+}
+
+function renderZukan() {
+  $("zukan").innerHTML = KANJI.map(d => {
+    const g = state.got[d.n];
+    return `<div class="z ${g ? "got" : ""}"><span class="k">${g ? d.k : "?"}</span><span class="r">${g ? d.r : ""}</span>${g ? `<span class="c">×${g}</span>` : ""}</div>`;
+  }).join("");
+  $("gotCount").textContent = Object.keys(state.got).length;
+  $("stars").textContent = state.stars;
+}
+
+function numHtml(n) {
+  const d = byN(n);
+  return `<div class="num"><div class="k">${d.k}</div><div class="r">${d.r}</div></div>`;
+}
+
+function newQuestion() {
+  locked = false;
+  cur = pickQuestion();
+  $("formula").innerHTML = numHtml(cur.a) + `<span class="op">+</span>` + numHtml(cur.b) + `<span class="op">=</span><span class="q">?</span>`;
+  $("hint").textContent = "こたえの かんじは どれかな?";
+  // 選択肢: 正解 + ダミー2つ
+  const set = new Set([cur.ans]);
+  while (set.size < 3) set.add(1 + Math.floor(Math.random() * 10));
+  const arr = [...set].sort(() => Math.random() - 0.5);
+  $("choices").innerHTML = arr.map(n => {
+    const d = byN(n);
+    return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span><span class="r">${d.r}</span></button>`;
+  }).join("");
+  $("quiz").classList.remove("hidden");
+  $("trace").classList.add("hidden");
+  speak(`${byN(cur.a).r} たす ${byN(cur.b).r} は?`);
+}
+
+$("choices").addEventListener("click", e => {
+  const btn = e.target.closest(".choice");
+  if (!btn || locked) return;
+  const n = +btn.dataset.n;
+  if (n === cur.ans) {
+    locked = true;
+    btn.classList.add("ok");
+    $("hint").textContent = `せいかい! ${byN(n).k} は「${byN(n).r}」`;
+    speak(byN(n).r);
+    cheer("🎉");
+    setTimeout(startTrace, 1100);
+  } else {
+    btn.classList.add("ng");
+    state.miss[cur.ans] = (state.miss[cur.ans] || 0) + 1; save();
+    $("hint").textContent = "おしい! もういっかい!";
+  }
+});
+
+// ---- なぞりがき ----
+const cv = $("cv"), ctx = cv.getContext("2d");
+let drawing = false, last = null, inked = 0;
+
+function sizeCanvas() {
+  const r = $("pad").getBoundingClientRect();
+  cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 14; ctx.strokeStyle = "#ff6f00";
+}
+function startTrace() {
+  const d = byN(cur.ans);
+  $("quiz").classList.add("hidden");
+  $("trace").classList.remove("hidden");
+  $("guide").textContent = d.k;
+  $("traceMsg").textContent = `「${d.k}」を なぞってみよう`;
+  sizeCanvas(); inked = 0;
+}
+function pos(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+cv.addEventListener("pointerdown", e => { drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  if (!drawing) return;
+  const p = pos(e);
+  ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+  inked += Math.hypot(p.x - last.x, p.y - last.y);
+  last = p;
+});
+["pointerup", "pointercancel"].forEach(t => cv.addEventListener(t, () => { drawing = false; }));
+$("clearBtn").addEventListener("click", () => { ctx.clearRect(0, 0, cv.width, cv.height); inked = 0; });
+$("doneBtn").addEventListener("click", () => {
+  if (inked < 60) { $("traceMsg").textContent = "ゆびで なぞってね!"; return; }
+  const n = cur.ans;
+  state.got[n] = (state.got[n] || 0) + 1;
+  state.stars += 1;
+  if (state.miss[n]) state.miss[n] = Math.max(0, state.miss[n] - 1);
+  save(); renderZukan();
+  cheer(Object.keys(state.got).length === 10 && state.got[n] === 1 ? "🏆 ぜんぶ そろった!" : "⭐");
+  setTimeout(newQuestion, 900);
+});
+
+window.addEventListener("resize", () => { if (!$("trace").classList.contains("hidden")) sizeCanvas(); });
+
+renderZukan();
+newQuestion();
+</script>
+</body>
+</html>
