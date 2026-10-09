@@ -79,6 +79,8 @@
   .z.rv { background: #fff0e0; color: #c98a45; outline: 2px dashed var(--main); outline-offset: -2px; }
   .z.rv .k { opacity: .75; }
   #rvLine { text-align: center; font-size: .95rem; color: #c66900; }
+  .sent { font-size: 1.7rem; line-height: 1.6; text-align: center; padding: 8px 0; }
+  .blank { display: inline-block; min-width: 1.6em; color: var(--main); border-bottom: 4px solid var(--main); }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
@@ -120,6 +122,8 @@
     <button id="tabOpp" class="tab">↔ はんたいことば</button>
     <button id="tabNat" class="tab">🖼️ えから かんじ</button>
     <button id="tabRead" class="tab">📖 よみクイズ</button>
+    <button id="tabSent" class="tab">📝 ぶんの かんじ</button>
+    <button id="tabMix" class="tab">🎲 80じ ミックス</button>
   </div>
 
   <!-- もんだい -->
@@ -228,6 +232,90 @@ const MORE = [
 ];
 const ALL = KANJI.concat(OPP, NAT, MORE);
 const PIC = ALL.filter(d => d.e);      // 絵が出せる字
+// ことばから かんじ: 空欄(＿)に はいる かんじを えらぶ。「|」の あとが 空欄に はいる ことば
+const SENT = {
+  "一": "＿ばん に ゴール|いち",
+  "二": "＿かい に あがる|に",
+  "三": "ねこが ＿びき いる|さん",
+  "四": "いぬが ＿ひき いる|よん",
+  "五": "＿じ に おやつ|ご",
+  "六": "＿さい の おにいちゃん|ろく",
+  "七": "うさぎが ＿ひき いる|なな",
+  "八": "＿じ に おきる|はち",
+  "九": "＿じ に ねる|く",
+  "十": "ともだちが ＿にん いる|じゅう",
+  "上": "かいだんを ＿に あがる|うえ",
+  "下": "かいだんを ＿に おりる|した",
+  "大": "＿きい ぞう|おお",
+  "小": "＿さい ありさん|ちい",
+  "左": "みぎの はんたいは ＿|ひだり",
+  "右": "ひだりの はんたいは ＿|みぎ",
+  "入": "へやに ＿る|はい",
+  "出": "へやから ＿る|で",
+  "男": "おんなの はんたいは ＿|おとこ",
+  "女": "おとこの はんたいは ＿|おんな",
+  "日": "あさ ＿が のぼる|ひ",
+  "月": "よる ＿が でる|つき",
+  "火": "ろうそくの ＿が ゆれる|ひ",
+  "水": "コップの ＿を のむ|みず",
+  "木": "＿に のぼって りんごを とる|き",
+  "山": "ロープウェイで ＿に のぼる|やま",
+  "川": "＿で さかなを つる|かわ",
+  "田": "＿に いねを うえる|た",
+  "石": "＿を ひろって なげる|いし",
+  "雨": "＿が ふって かさを さす|あめ",
+  "円": "ひゃく＿の おかし|えん",
+  "王": "＿さま の おしろ|おう",
+  "音": "ドアの ＿が きこえる|おと",
+  "花": "きれいな ＿が さく|はな",
+  "貝": "＿がら を みみに あてる|かい",
+  "学": "＿こう に いく|がっ",
+  "気": "＿もち が いい|き",
+  "休": "かぜを ひいて ＿む|やす",
+  "玉": "おおきな シャボン＿|だま",
+  "金": "＿いろ の メダル|きん",
+  "空": "あおい ＿に くもが うかぶ|そら",
+  "犬": "＿が わんと ほえる|いぬ",
+  "見": "ほしを ＿る|み",
+  "口": "＿を おおきく あけて あくび|くち",
+  "校": "がっ＿ に いく|こう",
+  "子": "＿ねこ が みゃあと なく|こ",
+  "糸": "はりに ＿を とおす|いと",
+  "字": "ていねいな ＿を かく|じ",
+  "耳": "ウサギの ＿は ながい|みみ",
+  "車": "＿に のって でかける|くるま",
+  "手": "＿を あらって ごはん|て",
+  "人": "えきに たくさんの ＿が いる|ひと",
+  "正": "こたえは ＿しい|ただ",
+  "生": "＿きもの を かう|いき",
+  "青": "そらは ＿い|あお",
+  "夕": "＿やけ が きれい|ゆう",
+  "赤": "トマトは ＿い|あか",
+  "千": "＿えん を だす|せん",
+  "先": "ゴールの ＿に いく|さき",
+  "早": "あさ ＿く おきる|はや",
+  "草": "にわの ＿を ぬく|くさ",
+  "足": "＿が はやい ひと|あし",
+  "村": "＿びと が あつまる|むら",
+  "竹": "たなばたに ＿に ねがいを かく|たけ",
+  "中": "はこの ＿に おもちゃ|なか",
+  "虫": "カブト＿ を つかまえる|むし",
+  "町": "＿かど を まがる|まち",
+  "天": "＿き が いい|てん",
+  "土": "にわの ＿に たねを まく|つち",
+  "年": "あたらしい ＿が くる|とし",
+  "白": "ゆきは ＿い|しろ",
+  "百": "＿てん を とる|ひゃく",
+  "文": "＿しょう を かく|ぶん",
+  "本": "＿を よむ|ほん",
+  "名": "じぶんの ＿まえ を かく|な",
+  "目": "＿を つぶって ねる|め",
+  "立": "いすから ＿つ|た",
+  "力": "＿もち の ぞう|ちから",
+  "林": "きが ふたつ ならんで ＿|はやし",
+  "森": "きが みっつ あつまって ＿|もり",
+};
+
 const TOTAL = ALL.length;
 const byN = n => ALL[n - 1];
 const STAGES = [
@@ -310,32 +398,41 @@ function calcPool() {
   const pool = [];
   for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
     const ans = a + b;
-    pool.push({ a, b, ans, op: "+", w: 1 + (state.miss[ans] || 0) * 2 });
+    pool.push({ a, b, ans, op: "+", mode: "calc", w: 1 + (state.miss[ans] || 0) * 2 });
   }
   for (let a = 2; a <= 10; a++) for (let b = 1; b < a; b++) {
     const ans = a - b;
-    pool.push({ a, b, ans, op: "-", w: 1 + (state.miss[ans] || 0) * 2 });
+    pool.push({ a, b, ans, op: "-", mode: "calc", w: 1 + (state.miss[ans] || 0) * 2 });
   }
   return pool;
 }
 function inPool(mode, n) {          // その モードで n が こたえに なる もんだいが つくれるか
-  return mode === "read" ? true : mode === "nat" ? PIC.some(d => d.n === n)
-    : mode === "opp" ? OPP.some(d => d.n === n) : n <= 10;
+  return mode === "nat" ? PIC.some(d => d.n === n) : mode === "opp" ? OPP.some(d => d.n === n)
+    : mode === "calc" ? n <= 10 : true;     // read / sent / mix は 80字ぜんぶ
+}
+function modesFor(n) { return ["read", "sent", "calc", "opp", "nat"].filter(m => inPool(m, n)); }
+function buildQ(mode, n) {          // n を こたえに する もんだい
+  if (mode === "calc") { const c = calcPool().filter(q => q.ans === n); return Object.assign({}, c[Math.floor(Math.random() * c.length)]); }
+  if (mode === "opp") return { a: partner(n), ans: n, mode };
+  return { a: n, ans: n, mode };
 }
 function reviewPick() {             // 「おぼえなおし」の じかんが きた字(あれば いちばん ふるい 1つ)
   const due = Object.keys(state.review).map(Number)
     .filter(n => state.review[n].at <= state.qn && inPool(state.mode, n))
     .sort((a, b) => state.review[a].at - state.review[b].at);
   if (!due.length || Math.random() > 0.85) return null;
-  const n = due[0];
-  if (state.mode === "calc") { const c = calcPool().filter(q => q.ans === n); return Object.assign({}, c[Math.floor(Math.random() * c.length)], { retry: true }); }
-  if (state.mode === "opp") return { a: partner(n), ans: n, mode: "opp", retry: true };
-  return { a: n, ans: n, mode: state.mode, retry: true };
+  const n = due[0], ms = state.mode === "mix" ? modesFor(n) : [state.mode];
+  return Object.assign(buildQ(ms[Math.floor(Math.random() * ms.length)], n), { retry: true });
 }
 function pickQuestion() {
   const rv = reviewPick();
   if (rv) return rv;
-  if (state.mode === "nat" || state.mode === "read") {
+  if (state.mode === "mix") {       // 80字ぜんぶから。まだ のっていない字と にがてな字を おおめに
+    const q = weighted(ALL.map(d => ({ n: d.n, w: 1 + (state.miss[d.n] || 0) * 2 + (state.got[d.n] ? 0 : 2) })));
+    const ms = modesFor(q.n);
+    return buildQ(ms[Math.floor(Math.random() * ms.length)], q.n);
+  }
+  if (state.mode === "nat" || state.mode === "read" || state.mode === "sent") {
     const src = state.mode === "nat" ? PIC : ALL;
     return weighted(src.map(d => ({ a: d.n, ans: d.n, mode: state.mode, w: 1 + (state.miss[d.n] || 0) * 2 })));
   }
@@ -365,6 +462,8 @@ function renderZukan() {
   $("tabOpp").classList.toggle("on", state.mode === "opp");
   $("tabNat").classList.toggle("on", state.mode === "nat");
   $("tabRead").classList.toggle("on", state.mode === "read");
+  $("tabSent").classList.toggle("on", state.mode === "sent");
+  $("tabMix").classList.toggle("on", state.mode === "mix");
   $("stars").textContent = state.stars;
 }
 
@@ -379,8 +478,13 @@ function newQuestion() {
   cur.missed = false;                // この もんだいで 1かいでも まちがえたか
   state.qn++; save();
   const opp = cur.mode === "opp", nat = cur.mode === "nat", rd = cur.mode === "read";
-  const pool = (opp ? OPP : nat ? PIC : rd ? ALL : KANJI).map(d => d.n);
-  if (nat) {
+  const sn = cur.mode === "sent";
+  const pool = (opp ? OPP : nat ? PIC : (rd || sn) ? ALL : KANJI).map(d => d.n);
+  if (sn) {
+    const txt = SENT[byN(cur.a).k].split("|")[0];
+    $("formula").innerHTML = `<div class="sent" id="sent">${txt.replace("＿", '<span class="blank" id="blank">＿</span>')}</div>`;
+    $("hint").textContent = "＿に はいる かんじは どれかな?";
+  } else if (nat) {
     $("formula").innerHTML = `<span class="pic" id="pic">${byN(cur.a).e}</span><span class="op">=</span><span class="q">?</span>`;
     $("hint").textContent = "この え は どの かんじかな?";
   } else if (rd) {
@@ -404,13 +508,13 @@ function newQuestion() {
   $("choices").innerHTML = arr.map(n => {
     const d = byN(n);
     if (rd) return `<button class="choice txt" data-n="${n}"><span class="k">${d.r}</span></button>`;
-    if (nat) return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span></button>`;
+    if (nat || sn) return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span></button>`;
     return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span><span class="r">${d.r}</span></button>`;
   }).join("");
   if (cur.retry) $("hint").textContent = "🔁 リベンジ! " + $("hint").textContent;
   $("quiz").classList.remove("hidden");
   $("trace").classList.add("hidden");
-  speak(rd ? `${byN(cur.a).k} は なんと よむ?` : nat ? "この え は どの かんじ?" : opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
+  speak(sn ? SENT[byN(cur.a).k].split("|")[0].replace("＿", "なに") : rd ? `${byN(cur.a).k} は なんと よむ?` : nat ? "この え は どの かんじ?" : opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
 }
 
 $("choices").addEventListener("click", e => {
@@ -423,7 +527,12 @@ $("choices").addEventListener("click", e => {
     $("hint").textContent = cur.missed
       ? `せいかい! ${byN(n).k} は「${byN(n).r}」。でも ずかんには まだ。おぼえなおして また チャレンジ!`
       : `せいかい! ${byN(n).k} は「${byN(n).r}」`;
-    speak(byN(n).r);
+    if (cur.mode === "sent") {      // 空欄に こたえを いれて ぶんを よみあげる
+      const [txt, w] = SENT[byN(n).k].split("|");
+      const blank = $("blank"); blank.textContent = byN(n).k; blank.classList.add("morph");
+      $("hint").textContent = `せいかい! 「${txt.replace("＿", w)}」` + (cur.missed ? "。でも ずかんには まだ。おぼえなおして また チャレンジ!" : "");
+      speak(txt.replace("＿", w));
+    } else speak(byN(n).r);
     cheer("🎉");
     if (cur.mode === "nat") {
       const pic = $("pic");
@@ -527,7 +636,8 @@ function startTrace() {
   $("learn").classList.toggle("hidden", !relearn);
   if (relearn) {
     const ctx = cur.mode === "calc" ? `${byN(cur.a).k} ${cur.op === "+" ? "+" : "−"} ${byN(cur.b).k} = ${d.k}`
-      : cur.mode === "opp" ? `${byN(cur.a).k} ↔ ${d.k}` : "";
+      : cur.mode === "opp" ? `${byN(cur.a).k} ↔ ${d.k}`
+      : cur.mode === "sent" ? SENT[d.k].split("|")[0].replace("＿", d.k) : "";
     $("learn").innerHTML = `<span class="lk">${d.k}</span><span class="lr">「${d.r}」</span>${d.e ? `<span class="lk" style="font-size:2.2rem">${d.e}</span>` : ""}`
       + (ctx ? `<span class="lx">${ctx}</span>` : "") + `<span class="lx">よく みて、かきじゅんを おぼえよう</span>`;
     speak(d.r);
@@ -733,6 +843,8 @@ $("tabCalc").addEventListener("click", () => setMode("calc"));
 $("tabOpp").addEventListener("click", () => setMode("opp"));
 $("tabNat").addEventListener("click", () => setMode("nat"));
 $("tabRead").addEventListener("click", () => setMode("read"));
+$("tabSent").addEventListener("click", () => setMode("sent"));
+$("tabMix").addEventListener("click", () => setMode("mix"));
 
 renderZukan();
 newQuestion();
