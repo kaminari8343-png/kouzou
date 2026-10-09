@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>かんじ たしざん</title>
+<title>かんじ けいさん</title>
 <style>
   :root {
     --bg: #fff8e1; --ink: #3e2723; --card: #ffffff; --main: #ff8f00;
@@ -65,7 +65,7 @@
 </head>
 <body>
 <div id="app">
-  <h1>かんじ たしざん</h1>
+  <h1>かんじ けいさん</h1>
   <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/10</span></div>
 
   <!-- もんだい -->
@@ -133,7 +133,11 @@ function pickQuestion() {
   const pool = [];
   for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
     const ans = a + b;
-    pool.push({ a, b, ans, w: 1 + (state.miss[ans] || 0) * 2 });
+    pool.push({ a, b, ans, op: "+", w: 1 + (state.miss[ans] || 0) * 2 });
+  }
+  for (let a = 2; a <= 10; a++) for (let b = 1; b < a; b++) {
+    const ans = a - b;
+    pool.push({ a, b, ans, op: "-", w: 1 + (state.miss[ans] || 0) * 2 });
   }
   let total = pool.reduce((s, p) => s + p.w, 0), x = Math.random() * total;
   for (const p of pool) { x -= p.w; if (x <= 0) return p; }
@@ -157,7 +161,7 @@ function numHtml(n) {
 function newQuestion() {
   locked = false;
   cur = pickQuestion();
-  $("formula").innerHTML = numHtml(cur.a) + `<span class="op">+</span>` + numHtml(cur.b) + `<span class="op">=</span><span class="q">?</span>`;
+  $("formula").innerHTML = numHtml(cur.a) + `<span class="op">${cur.op === "+" ? "+" : "−"}</span>` + numHtml(cur.b) + `<span class="op">=</span><span class="q">?</span>`;
   $("hint").textContent = "こたえの かんじは どれかな?";
   // 選択肢: 正解 + ダミー2つ
   const set = new Set([cur.ans]);
@@ -169,7 +173,7 @@ function newQuestion() {
   }).join("");
   $("quiz").classList.remove("hidden");
   $("trace").classList.add("hidden");
-  speak(`${byN(cur.a).r} たす ${byN(cur.b).r} は?`);
+  speak(`${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
 }
 
 $("choices").addEventListener("click", e => {
