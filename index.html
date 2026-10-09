@@ -10,6 +10,7 @@
     --ok: #43a047; --ng: #e53935; --soft: #ffe0b2;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
     font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", sans-serif; }
   body { display: flex; justify-content: center; }
@@ -613,8 +614,15 @@ document.querySelectorAll('input[name="lv"]').forEach(r => r.addEventListener("c
 $("optAuto").addEventListener("change", e => { state.set.autoDemo = e.target.checked; save(); });
 $("optQ").addEventListener("change", e => { state.set.quality = e.target.checked; save(); });
 $("optDbg").addEventListener("change", e => { state.set.debug = e.target.checked; save(); applySettings(); });
+let resetArmed = null;           // スマホの ひょうじでは confirm() が つかえないので 2かい おして けす
 $("resetBtn").addEventListener("click", () => {
-  if (!confirm("ずかんも ⭐も ぜんぶ きえます。いいですか?")) return;
+  const b = $("resetBtn");
+  if (!resetArmed) {
+    b.textContent = "ほんとうに けす? もういちど おす";
+    resetArmed = setTimeout(() => { resetArmed = null; b.textContent = "きろくを ぜんぶ けす"; }, 4000);
+    return;
+  }
+  clearTimeout(resetArmed); resetArmed = null; b.textContent = "きろくを ぜんぶ けす";
   state.stars = 0; state.got = {}; state.miss = {}; save(); renderZukan(); newQuestion();
 });
 applySettings();
