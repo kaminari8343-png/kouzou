@@ -71,6 +71,14 @@
   .opt label { margin-right: 8px; }
   .endtag { font-size: 5px; font-weight: bold; fill: #1e88e5; paint-order: stroke; stroke: #fffdf7; stroke-width: 1.2px; }
   #dbg { font: 11px/1.4 monospace; color: #6d4c41; white-space: pre-wrap; margin-top: 8px; }
+  #learn { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    background: #fff3e0; border: 3px dashed var(--main); border-radius: 16px; padding: 8px 12px; margin-bottom: 8px; }
+  #learn .lk { font-size: 3rem; line-height: 1; }
+  #learn .lr { font-size: 1.3rem; font-weight: bold; }
+  #learn .lx { font-size: 1rem; color: #8d6e63; width: 100%; text-align: center; }
+  .z.rv { background: #fff0e0; color: #c98a45; outline: 2px dashed var(--main); outline-offset: -2px; }
+  .z.rv .k { opacity: .75; }
+  #rvLine { text-align: center; font-size: .95rem; color: #c66900; }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
@@ -106,6 +114,7 @@
   </section>
   <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">80</span></span></div>
   <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
+  <div id="rvLine" class="hidden"></div>
   <div class="tabs">
     <button id="tabCalc" class="tab">🔢 けいさん</button>
     <button id="tabOpp" class="tab">↔ はんたいことば</button>
@@ -122,6 +131,7 @@
 
   <!-- なぞりがき -->
   <section id="trace" class="card hidden">
+    <div id="learn" class="hidden"></div>
     <p id="traceMsg"></p>
     <div id="pad"><svg id="sv" viewBox="0 0 109 109"></svg></div>
     <div id="dbg" class="hidden"></div>
@@ -236,7 +246,7 @@ function load() {
 function save() {
   try { localStorage.setItem("kanjiTashizan", JSON.stringify(state)); } catch (e) {}
 }
-const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc" }, load());
+const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc", review: {}, qn: 0 }, load());
 // おうちのひと用の せってい(0:やさしい 1:ふつう 2:きびしい)
 state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, state.set || {});
 const TOL = [1.35, 1, 0.75];       // やさしい ほど 許す はんいが ひろい
@@ -267,6 +277,7 @@ const sfx = {
   ng() { tone(330, 0, 0.16, "sine", 0.11); tone(262, 0.13, 0.22, "sine", 0.11); },     // やさしい ひくい おと
   stroke(i) { tone(PENTA[i % PENTA.length], 0, 0.16, "triangle", 0.13); },             // 1画ごとに すこしずつ たかく
   done() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.35, "triangle", 0.15)); tone(1568, 0.34, 0.4, "sine", 0.08); },
+  relearn() { [523, 659].forEach((f, i) => tone(f, i * 0.12, 0.3, "sine", 0.12)); },
   sparkle() { [1568, 2093, 2637].forEach((f, i) => tone(f, i * 0.07, 0.2, "sine", 0.07)); },
   evolve() { PENTA.forEach((f, i) => tone(f, i * 0.07, 0.25, "triangle", 0.13)); [523, 659, 784, 1047].forEach(f => tone(f, 0.62, 0.7, "sine", 0.1)); },
 };
@@ -295,7 +306,35 @@ function weighted(pool) {
   for (const q of pool) { x -= q.w; if (x <= 0) return q; }
   return pool[0];
 }
+function calcPool() {
+  const pool = [];
+  for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
+    const ans = a + b;
+    pool.push({ a, b, ans, op: "+", w: 1 + (state.miss[ans] || 0) * 2 });
+  }
+  for (let a = 2; a <= 10; a++) for (let b = 1; b < a; b++) {
+    const ans = a - b;
+    pool.push({ a, b, ans, op: "-", w: 1 + (state.miss[ans] || 0) * 2 });
+  }
+  return pool;
+}
+function inPool(mode, n) {          // その モードで n が こたえに なる もんだいが つくれるか
+  return mode === "read" ? true : mode === "nat" ? PIC.some(d => d.n === n)
+    : mode === "opp" ? OPP.some(d => d.n === n) : n <= 10;
+}
+function reviewPick() {             // 「おぼえなおし」の じかんが きた字(あれば いちばん ふるい 1つ)
+  const due = Object.keys(state.review).map(Number)
+    .filter(n => state.review[n].at <= state.qn && inPool(state.mode, n))
+    .sort((a, b) => state.review[a].at - state.review[b].at);
+  if (!due.length || Math.random() > 0.85) return null;
+  const n = due[0];
+  if (state.mode === "calc") { const c = calcPool().filter(q => q.ans === n); return Object.assign({}, c[Math.floor(Math.random() * c.length)], { retry: true }); }
+  if (state.mode === "opp") return { a: partner(n), ans: n, mode: "opp", retry: true };
+  return { a: n, ans: n, mode: state.mode, retry: true };
+}
 function pickQuestion() {
+  const rv = reviewPick();
+  if (rv) return rv;
   if (state.mode === "nat" || state.mode === "read") {
     const src = state.mode === "nat" ? PIC : ALL;
     return weighted(src.map(d => ({ a: d.n, ans: d.n, mode: state.mode, w: 1 + (state.miss[d.n] || 0) * 2 })));
@@ -306,26 +345,18 @@ function pickQuestion() {
     for (const q of pool) { x -= q.w; if (x <= 0) return q; }
     return pool[0];
   }
-  const pool = [];
-  for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
-    const ans = a + b;
-    pool.push({ a, b, ans, op: "+", w: 1 + (state.miss[ans] || 0) * 2 });
-  }
-  for (let a = 2; a <= 10; a++) for (let b = 1; b < a; b++) {
-    const ans = a - b;
-    pool.push({ a, b, ans, op: "-", w: 1 + (state.miss[ans] || 0) * 2 });
-  }
-  let total = pool.reduce((s, p) => s + p.w, 0), x = Math.random() * total;
-  for (const p of pool) { x -= p.w; if (x <= 0) return p; }
-  return pool[0];
+  return weighted(calcPool());
 }
 
 function renderZukan() {
   $("zukan").innerHTML = ALL.map(d => {
-    const g = state.got[d.n];
-    return `<div class="z ${g ? "got" : ""}" title="${g ? d.k + " ×" + g : ""}"><span class="k">${g ? d.k : "?"}</span><span class="r">${g ? d.r : ""}</span></div>`;
+    const g = state.got[d.n], rv = state.review[d.n];
+    return `<div class="z ${g ? "got" : rv ? "rv" : ""}" title="${g ? d.k + " ×" + g : ""}"><span class="k">${g || rv ? d.k : "?"}</span><span class="r">${rv ? "🔁" : g ? d.r : ""}</span></div>`;
   }).join("");
   $("gotCount").textContent = Object.keys(state.got).length;
+  const rc = Object.keys(state.review).length;
+  $("rvLine").classList.toggle("hidden", !rc);
+  $("rvLine").textContent = `🔁 おぼえなおし ${rc}こ(もういちど チャレンジすると ずかんに のるよ)`;
   $("totalCount").textContent = TOTAL;
   const c = Object.keys(state.got).length, si = stageIdx(c), st = STAGES[si], nx = STAGES[si + 1];
   $("petE").textContent = st.e;
@@ -345,6 +376,8 @@ function numHtml(n) {
 function newQuestion() {
   locked = false;
   cur = pickQuestion();
+  cur.missed = false;                // この もんだいで 1かいでも まちがえたか
+  state.qn++; save();
   const opp = cur.mode === "opp", nat = cur.mode === "nat", rd = cur.mode === "read";
   const pool = (opp ? OPP : nat ? PIC : rd ? ALL : KANJI).map(d => d.n);
   if (nat) {
@@ -374,6 +407,7 @@ function newQuestion() {
     if (nat) return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span></button>`;
     return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span><span class="r">${d.r}</span></button>`;
   }).join("");
+  if (cur.retry) $("hint").textContent = "🔁 リベンジ! " + $("hint").textContent;
   $("quiz").classList.remove("hidden");
   $("trace").classList.add("hidden");
   speak(rd ? `${byN(cur.a).k} は なんと よむ?` : nat ? "この え は どの かんじ?" : opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
@@ -386,7 +420,9 @@ $("choices").addEventListener("click", e => {
   if (n === cur.ans) {
     locked = true;
     btn.classList.add("ok"); sfx.ok();
-    $("hint").textContent = `せいかい! ${byN(n).k} は「${byN(n).r}」`;
+    $("hint").textContent = cur.missed
+      ? `せいかい! ${byN(n).k} は「${byN(n).r}」。でも ずかんには まだ。おぼえなおして また チャレンジ!`
+      : `せいかい! ${byN(n).k} は「${byN(n).r}」`;
     speak(byN(n).r);
     cheer("🎉");
     if (cur.mode === "nat") {
@@ -396,9 +432,10 @@ $("choices").addEventListener("click", e => {
     }
     setTimeout(startTrace, 1300);
   } else {
-    btn.classList.add("ng"); sfx.ng();
+    btn.classList.add("ng"); btn.disabled = true; sfx.ng();
+    cur.missed = true;               // まちがえても ほかの こたえを えらんで すすめる。でも ずかんには のらない
     state.miss[cur.ans] = (state.miss[cur.ans] || 0) + 1; save();
-    $("hint").textContent = "おしい! もういっかい!";
+    $("hint").textContent = "おしい! ほかの こたえを えらんでみよう(この もんだいは あとで もういちど でるよ)";
   }
 });
 
@@ -486,9 +523,18 @@ function startTrace() {
     for (let j = 0; j <= 60; j++) { const q = path.getPointAtLength(L * j / 60); raw.push({ x: q.x, y: q.y }); }
     return { kind, turn: kind === "hook" ? hookTurn(raw) : 0, end: raw[60] };
   });
-  tr = { ds, refs: ds.map(refPoints), meta, idx: 0, misses: 0, busy: false, user: null, k: d.k, qOk: 0, qTotal: 0 };
+  const relearn = !!cur.missed;
+  $("learn").classList.toggle("hidden", !relearn);
+  if (relearn) {
+    const ctx = cur.mode === "calc" ? `${byN(cur.a).k} ${cur.op === "+" ? "+" : "−"} ${byN(cur.b).k} = ${d.k}`
+      : cur.mode === "opp" ? `${byN(cur.a).k} ↔ ${d.k}` : "";
+    $("learn").innerHTML = `<span class="lk">${d.k}</span><span class="lr">「${d.r}」</span>${d.e ? `<span class="lk" style="font-size:2.2rem">${d.e}</span>` : ""}`
+      + (ctx ? `<span class="lx">${ctx}</span>` : "") + `<span class="lx">よく みて、かきじゅんを おぼえよう</span>`;
+    speak(d.r);
+  }
+  tr = { relearn, ds, refs: ds.map(refPoints), meta, idx: 0, misses: 0, busy: false, user: null, k: d.k, qOk: 0, qTotal: 0 };
   ds.forEach(x => sv.appendChild(el("path", { d: x }, "ghost")));
-  showNext(state.set.autoDemo);
+  showNext(state.set.autoDemo || relearn);
 }
 function say(t) { $("traceMsg").textContent = t; }
 function clearMarks() { sv.querySelectorAll(".startdot,.startnum,.demo,.endtag").forEach(e => e.remove()); }
@@ -532,10 +578,16 @@ function acceptStroke(auto, userPts) {
   }
   tr.idx++; tr.misses = 0;
   if (tr.idx >= tr.ds.length) {
-    clearMarks(); tr.busy = true; sfx.done();
-    const all = tr.qTotal > 0 && tr.qOk === tr.qTotal;
-    say(`かんせい! 「${tr.k}」が かけたね 🎉` + (tr.qTotal ? `  ていねい ✨${tr.qOk}/${tr.qTotal}` : ""));
-    if (all) { state.stars += 1; cheer("🌟"); setTimeout(sfx.sparkle, 450); }
+    clearMarks(); tr.busy = true;
+    if (tr.relearn) {
+      sfx.relearn();
+      say(`よく かけたね! 「${tr.k}」は ずかんに まだ のらないよ。すこし あとに もういちど チャレンジ!`);
+    } else {
+      sfx.done();
+      const all = tr.qTotal > 0 && tr.qOk === tr.qTotal;
+      say(`かんせい! 「${tr.k}」が かけたね 🎉` + (tr.qTotal ? `  ていねい ✨${tr.qOk}/${tr.qTotal}` : ""));
+      if (all) { state.stars += 1; cheer("🌟"); setTimeout(sfx.sparkle, 450); }
+    }
     speak(byN(cur.ans).r);
     setTimeout(finishTrace, 1300);
   } else {
@@ -622,16 +674,30 @@ $("hintBtn").addEventListener("click", () => { sfx.tap(); if (tr && !tr.busy) { 
 $("clearBtn").addEventListener("click", () => { if (tr && !tr.busy) startTrace(); });
 
 function finishTrace() {
+  const relearn = tr && tr.relearn;
   tr = null;
   const n = cur.ans;
+  $("learn").classList.add("hidden");
+  if (relearn) {                    // まちがえた もんだい: ずかんには のせない。あとで もういちど
+    const fails = ((state.review[n] && state.review[n].fails) || 0) + 1;
+    state.review[n] = { at: state.qn + Math.min(3 + 2 * (fails - 1), 9), fails };
+    save(); renderZukan();
+    cheer("🔁");
+    setTimeout(newQuestion, 900);
+    return;
+  }
   const before = stageIdx(Object.keys(state.got).length);
   state.got[n] = (state.got[n] || 0) + 1;
   const evolved = stageIdx(Object.keys(state.got).length) > before;
   state.stars += 1;
+  const revenge = !!state.review[n];
+  if (revenge) { delete state.review[n]; state.stars += 1; }   // おぼえなおして せいかい: ボーナス
   if (state.miss[n]) state.miss[n] = Math.max(0, state.miss[n] - 1);
   save(); renderZukan();
   cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!"
-    : evolved ? `${STAGES[stageIdx(Object.keys(state.got).length)].e} しんか!` : "⭐");
+    : evolved ? `${STAGES[stageIdx(Object.keys(state.got).length)].e} しんか!`
+    : revenge ? "🔁⭐ リベンジ せいこう!" : "⭐");
+  if (revenge) setTimeout(sfx.sparkle, 300);
   if (evolved) { speak("しんか!"); sfx.evolve(); }
   setTimeout(newQuestion, 900);
 }
@@ -658,7 +724,7 @@ $("resetBtn").addEventListener("click", () => {
     return;
   }
   clearTimeout(resetArmed); resetArmed = null; b.textContent = "きろくを ぜんぶ けす";
-  state.stars = 0; state.got = {}; state.miss = {}; save(); renderZukan(); newQuestion();
+  state.stars = 0; state.got = {}; state.miss = {}; state.review = {}; state.qn = 0; save(); renderZukan(); newQuestion();
 });
 applySettings();
 
