@@ -22,9 +22,18 @@
   .big-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c66900; }
   .big-btn.sub { background: #8d6e63; box-shadow: 0 5px 0 #5d4037; font-size: 1.2rem; }
   .tabs { display: flex; gap: 8px; }
-  .tab { flex: 1; font: inherit; font-size: 1.1rem; padding: 10px 4px; border: 3px solid var(--soft);
+  .tab { font: inherit; font-size: 1.1rem; padding: 10px 4px; border: 3px solid var(--soft);
     border-radius: 14px; background: #fff; color: var(--ink); cursor: pointer; }
   .tab.on { background: var(--main); border-color: var(--main); color: #fff; }
+  .pet { text-align: center; font-size: 1rem; }
+  .pet .e { font-size: 2.6rem; display: block; line-height: 1.1; }
+  .pic { font-size: 4.2rem; line-height: 1; }
+  .morph { animation: morph 1s ease-in-out; }
+  @keyframes morph { 0% { transform: scale(1) rotate(0); opacity: 1; } 45% { transform: scale(.2) rotate(180deg); opacity: 0; }
+    55% { transform: scale(.2) rotate(180deg); opacity: 0; } 100% { transform: scale(1) rotate(360deg); opacity: 1; } }
+  .choice.txt .k { font-size: 2rem; padding: 10px 0; }
+  .tabs { flex-wrap: wrap; }
+  .tab { flex: 1 1 45%; }
   .hidden { display: none !important; }
 
   /* mondai */
@@ -70,10 +79,13 @@
 <body>
 <div id="app">
   <h1>かんじ けいさん</h1>
-  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">20</span></span></div>
+  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">30</span></span></div>
+  <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
   <div class="tabs">
     <button id="tabCalc" class="tab">🔢 けいさん</button>
     <button id="tabOpp" class="tab">↔ はんたいことば</button>
+    <button id="tabNat" class="tab">🌳 しぜんの かんじ</button>
+    <button id="tabRead" class="tab">📖 よみクイズ</button>
   </div>
 
   <!-- もんだい -->
@@ -116,9 +128,24 @@ const OPP = [
   { n: 17, k: "入", r: "いる" }, { n: 18, k: "出", r: "でる" },
   { n: 19, k: "男", r: "おとこ" }, { n: 20, k: "女", r: "おんな" },
 ];
-const ALL = KANJI.concat(OPP);
+// しぜんの漢字: 絵(emoji)が漢字に変身する
+const NAT = [
+  { n: 21, k: "日", r: "ひ", e: "☀️" }, { n: 22, k: "月", r: "つき", e: "🌙" },
+  { n: 23, k: "火", r: "か", e: "🔥" }, { n: 24, k: "水", r: "みず", e: "💧" },
+  { n: 25, k: "木", r: "き", e: "🌳" }, { n: 26, k: "山", r: "やま", e: "⛰️" },
+  { n: 27, k: "川", r: "かわ", e: "🏞️" }, { n: 28, k: "田", r: "た", e: "🌾" },
+  { n: 29, k: "石", r: "いし", e: "🪨" }, { n: 30, k: "雨", r: "あめ", e: "🌧️" },
+];
+const ALL = KANJI.concat(OPP, NAT);
 const TOTAL = ALL.length;
 const byN = n => ALL[n - 1];
+const STAGES = [
+  { at: 0, e: "🥚", name: "たまご" }, { at: 4, e: "🐣", name: "ひよこ" },
+  { at: 8, e: "🐥", name: "こどり" }, { at: 13, e: "🐔", name: "にわとり" },
+  { at: 18, e: "🦜", name: "おうむ" }, { at: 23, e: "🦚", name: "くじゃく" },
+  { at: 27, e: "🐉", name: "ドラゴン" }, { at: 30, e: "🦄", name: "でんせつ" },
+];
+const stageIdx = c => STAGES.reduce((i, st, j) => (c >= st.at ? j : i), 0);
 const partner = n => (n % 2 === 1 ? n + 1 : n - 1);
 
 // ---- 保存(使えない環境でも動くように try/catch) ----
@@ -148,7 +175,16 @@ let cur = null;      // { a, b, ans }
 let locked = false;
 
 // 苦手な答えが出やすくなる重み付き抽選
+function weighted(pool) {
+  let x = Math.random() * pool.reduce((t, q) => t + q.w, 0);
+  for (const q of pool) { x -= q.w; if (x <= 0) return q; }
+  return pool[0];
+}
 function pickQuestion() {
+  if (state.mode === "nat" || state.mode === "read") {
+    const src = state.mode === "nat" ? NAT : ALL;
+    return weighted(src.map(d => ({ a: d.n, ans: d.n, mode: state.mode, w: 1 + (state.miss[d.n] || 0) * 2 })));
+  }
   if (state.mode === "opp") {
     const pool = OPP.map(d => ({ a: d.n, ans: partner(d.n), mode: "opp", w: 1 + (state.miss[partner(d.n)] || 0) * 2 }));
     let x = Math.random() * pool.reduce((t, q) => t + q.w, 0);
@@ -176,8 +212,13 @@ function renderZukan() {
   }).join("");
   $("gotCount").textContent = Object.keys(state.got).length;
   $("totalCount").textContent = TOTAL;
+  const c = Object.keys(state.got).length, si = stageIdx(c), st = STAGES[si], nx = STAGES[si + 1];
+  $("petE").textContent = st.e;
+  $("petT").textContent = nx ? `${st.name}(つぎの しんかまで あと ${nx.at - c}こ)` : `${st.name}(さいきょう!)`;
   $("tabCalc").classList.toggle("on", state.mode === "calc");
   $("tabOpp").classList.toggle("on", state.mode === "opp");
+  $("tabNat").classList.toggle("on", state.mode === "nat");
+  $("tabRead").classList.toggle("on", state.mode === "read");
   $("stars").textContent = state.stars;
 }
 
@@ -189,9 +230,15 @@ function numHtml(n) {
 function newQuestion() {
   locked = false;
   cur = pickQuestion();
-  const opp = cur.mode === "opp";
-  const lo = opp ? 11 : 1, hi = opp ? 20 : 10;
-  if (opp) {
+  const opp = cur.mode === "opp", nat = cur.mode === "nat", rd = cur.mode === "read";
+  const lo = opp ? 11 : nat ? 21 : rd ? 1 : 1, hi = opp ? 20 : nat ? 30 : rd ? 30 : 10;
+  if (nat) {
+    $("formula").innerHTML = `<span class="pic" id="pic">${byN(cur.a).e}</span><span class="op">=</span><span class="q">?</span>`;
+    $("hint").textContent = "この え は どの かんじかな?";
+  } else if (rd) {
+    $("formula").innerHTML = `<div class="num"><div class="k" style="font-size:5rem">${byN(cur.a).k}</div></div>`;
+    $("hint").textContent = "なんて よむのかな?";
+  } else if (opp) {
     $("formula").innerHTML = numHtml(cur.a) + `<span class="op">↔</span><span class="q">?</span>`;
     $("hint").textContent = "はんたいの かんじは どれかな?";
   } else {
@@ -200,15 +247,21 @@ function newQuestion() {
   }
   // 選択肢: 正解 + ダミー2つ
   const set = new Set([cur.ans]);
-  while (set.size < 3) set.add(lo + Math.floor(Math.random() * (hi - lo + 1)));
+  while (set.size < 3) {
+    const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+    if (rd && byN(n).r === byN(cur.ans).r) continue; // おなじ よみは まぜない
+    set.add(n);
+  }
   const arr = [...set].sort(() => Math.random() - 0.5);
   $("choices").innerHTML = arr.map(n => {
     const d = byN(n);
+    if (rd) return `<button class="choice txt" data-n="${n}"><span class="k">${d.r}</span></button>`;
+    if (nat) return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span></button>`;
     return `<button class="choice" data-n="${n}"><span class="k">${d.k}</span><span class="r">${d.r}</span></button>`;
   }).join("");
   $("quiz").classList.remove("hidden");
   $("trace").classList.add("hidden");
-  speak(opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
+  speak(rd ? `${byN(cur.a).k} は なんと よむ?` : nat ? "この え は どの かんじ?" : opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
 }
 
 $("choices").addEventListener("click", e => {
@@ -221,7 +274,12 @@ $("choices").addEventListener("click", e => {
     $("hint").textContent = `せいかい! ${byN(n).k} は「${byN(n).r}」`;
     speak(byN(n).r);
     cheer("🎉");
-    setTimeout(startTrace, 1100);
+    if (cur.mode === "nat") {
+      const pic = $("pic");
+      pic.classList.add("morph");
+      setTimeout(() => { pic.textContent = byN(n).k; }, 500);
+    }
+    setTimeout(startTrace, 1300);
   } else {
     btn.classList.add("ng");
     state.miss[cur.ans] = (state.miss[cur.ans] || 0) + 1; save();
@@ -261,11 +319,15 @@ $("clearBtn").addEventListener("click", () => { ctx.clearRect(0, 0, cv.width, cv
 $("doneBtn").addEventListener("click", () => {
   if (inked < 60) { $("traceMsg").textContent = "ゆびで なぞってね!"; return; }
   const n = cur.ans;
+  const before = stageIdx(Object.keys(state.got).length);
   state.got[n] = (state.got[n] || 0) + 1;
+  const evolved = stageIdx(Object.keys(state.got).length) > before;
   state.stars += 1;
   if (state.miss[n]) state.miss[n] = Math.max(0, state.miss[n] - 1);
   save(); renderZukan();
-  cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!" : "⭐");
+  cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!"
+    : evolved ? `${STAGES[stageIdx(Object.keys(state.got).length)].e} しんか!` : "⭐");
+  if (evolved) speak("しんか!");
   setTimeout(newQuestion, 900);
 });
 
@@ -274,6 +336,8 @@ window.addEventListener("resize", () => { if (!$("trace").classList.contains("hi
 function setMode(m) { state.mode = m; save(); renderZukan(); newQuestion(); }
 $("tabCalc").addEventListener("click", () => setMode("calc"));
 $("tabOpp").addEventListener("click", () => setMode("opp"));
+$("tabNat").addEventListener("click", () => setMode("nat"));
+$("tabRead").addEventListener("click", () => setMode("read"));
 
 renderZukan();
 newQuestion();
