@@ -21,6 +21,10 @@
     background: var(--main); color: #fff; box-shadow: 0 5px 0 #c66900; cursor: pointer; width: 100%; }
   .big-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c66900; }
   .big-btn.sub { background: #8d6e63; box-shadow: 0 5px 0 #5d4037; font-size: 1.2rem; }
+  .tabs { display: flex; gap: 8px; }
+  .tab { flex: 1; font: inherit; font-size: 1.1rem; padding: 10px 4px; border: 3px solid var(--soft);
+    border-radius: 14px; background: #fff; color: var(--ink); cursor: pointer; }
+  .tab.on { background: var(--main); border-color: var(--main); color: #fff; }
   .hidden { display: none !important; }
 
   /* mondai */
@@ -66,7 +70,11 @@
 <body>
 <div id="app">
   <h1>かんじ けいさん</h1>
-  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/10</span></div>
+  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">20</span></span></div>
+  <div class="tabs">
+    <button id="tabCalc" class="tab">🔢 けいさん</button>
+    <button id="tabOpp" class="tab">↔ はんたいことば</button>
+  </div>
 
   <!-- もんだい -->
   <section id="quiz" class="card">
@@ -100,7 +108,18 @@ const KANJI = [
   { n: 7, k: "七", r: "なな" }, { n: 8, k: "八", r: "はち" }, { n: 9, k: "九", r: "きゅう" },
   { n: 10, k: "十", r: "じゅう" },
 ];
-const byN = n => KANJI[n - 1];
+// はんたいことば: 奇数番号とその次の番号がペア(11↔12, 13↔14 ...)
+const OPP = [
+  { n: 11, k: "上", r: "うえ" }, { n: 12, k: "下", r: "した" },
+  { n: 13, k: "大", r: "おおきい" }, { n: 14, k: "小", r: "ちいさい" },
+  { n: 15, k: "左", r: "ひだり" }, { n: 16, k: "右", r: "みぎ" },
+  { n: 17, k: "入", r: "いる" }, { n: 18, k: "出", r: "でる" },
+  { n: 19, k: "男", r: "おとこ" }, { n: 20, k: "女", r: "おんな" },
+];
+const ALL = KANJI.concat(OPP);
+const TOTAL = ALL.length;
+const byN = n => ALL[n - 1];
+const partner = n => (n % 2 === 1 ? n + 1 : n - 1);
 
 // ---- 保存(使えない環境でも動くように try/catch) ----
 function load() {
@@ -109,7 +128,7 @@ function load() {
 function save() {
   try { localStorage.setItem("kanjiTashizan", JSON.stringify(state)); } catch (e) {}
 }
-const state = Object.assign({ stars: 0, got: {}, miss: {} }, load());
+const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc" }, load());
 
 // ---- 音 ----
 function speak(text) {
@@ -130,6 +149,12 @@ let locked = false;
 
 // 苦手な答えが出やすくなる重み付き抽選
 function pickQuestion() {
+  if (state.mode === "opp") {
+    const pool = OPP.map(d => ({ a: d.n, ans: partner(d.n), mode: "opp", w: 1 + (state.miss[partner(d.n)] || 0) * 2 }));
+    let x = Math.random() * pool.reduce((t, q) => t + q.w, 0);
+    for (const q of pool) { x -= q.w; if (x <= 0) return q; }
+    return pool[0];
+  }
   const pool = [];
   for (let a = 1; a <= 9; a++) for (let b = 1; a + b <= 10; b++) {
     const ans = a + b;
@@ -145,11 +170,14 @@ function pickQuestion() {
 }
 
 function renderZukan() {
-  $("zukan").innerHTML = KANJI.map(d => {
+  $("zukan").innerHTML = ALL.map(d => {
     const g = state.got[d.n];
     return `<div class="z ${g ? "got" : ""}"><span class="k">${g ? d.k : "?"}</span><span class="r">${g ? d.r : ""}</span>${g ? `<span class="c">×${g}</span>` : ""}</div>`;
   }).join("");
   $("gotCount").textContent = Object.keys(state.got).length;
+  $("totalCount").textContent = TOTAL;
+  $("tabCalc").classList.toggle("on", state.mode === "calc");
+  $("tabOpp").classList.toggle("on", state.mode === "opp");
   $("stars").textContent = state.stars;
 }
 
@@ -161,11 +189,18 @@ function numHtml(n) {
 function newQuestion() {
   locked = false;
   cur = pickQuestion();
-  $("formula").innerHTML = numHtml(cur.a) + `<span class="op">${cur.op === "+" ? "+" : "−"}</span>` + numHtml(cur.b) + `<span class="op">=</span><span class="q">?</span>`;
-  $("hint").textContent = "こたえの かんじは どれかな?";
+  const opp = cur.mode === "opp";
+  const lo = opp ? 11 : 1, hi = opp ? 20 : 10;
+  if (opp) {
+    $("formula").innerHTML = numHtml(cur.a) + `<span class="op">↔</span><span class="q">?</span>`;
+    $("hint").textContent = "はんたいの かんじは どれかな?";
+  } else {
+    $("formula").innerHTML = numHtml(cur.a) + `<span class="op">${cur.op === "+" ? "+" : "−"}</span>` + numHtml(cur.b) + `<span class="op">=</span><span class="q">?</span>`;
+    $("hint").textContent = "こたえの かんじは どれかな?";
+  }
   // 選択肢: 正解 + ダミー2つ
   const set = new Set([cur.ans]);
-  while (set.size < 3) set.add(1 + Math.floor(Math.random() * 10));
+  while (set.size < 3) set.add(lo + Math.floor(Math.random() * (hi - lo + 1)));
   const arr = [...set].sort(() => Math.random() - 0.5);
   $("choices").innerHTML = arr.map(n => {
     const d = byN(n);
@@ -173,7 +208,7 @@ function newQuestion() {
   }).join("");
   $("quiz").classList.remove("hidden");
   $("trace").classList.add("hidden");
-  speak(`${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
+  speak(opp ? `${byN(cur.a).r} の はんたいは?` : `${byN(cur.a).r} ${cur.op === "+" ? "たす" : "ひく"} ${byN(cur.b).r} は?`);
 }
 
 $("choices").addEventListener("click", e => {
@@ -230,11 +265,15 @@ $("doneBtn").addEventListener("click", () => {
   state.stars += 1;
   if (state.miss[n]) state.miss[n] = Math.max(0, state.miss[n] - 1);
   save(); renderZukan();
-  cheer(Object.keys(state.got).length === 10 && state.got[n] === 1 ? "🏆 ぜんぶ そろった!" : "⭐");
+  cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!" : "⭐");
   setTimeout(newQuestion, 900);
 });
 
 window.addEventListener("resize", () => { if (!$("trace").classList.contains("hidden")) sizeCanvas(); });
+
+function setMode(m) { state.mode = m; save(); renderZukan(); newQuestion(); }
+$("tabCalc").addEventListener("click", () => setMode("calc"));
+$("tabOpp").addEventListener("click", () => setMode("opp"));
 
 renderZukan();
 newQuestion();
