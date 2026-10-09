@@ -66,16 +66,20 @@
   .startdot { fill: #1e88e5; animation: pulse 1s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   .startnum { fill: #fff; font-size: 7px; font-weight: bold; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
   @keyframes pulse { 50% { transform: scale(1.35); } }
+  .opt { display: block; margin: 8px 0; font-size: 1rem; }
+  .opt label { margin-right: 8px; }
+  .endtag { font-size: 5px; font-weight: bold; fill: #1e88e5; paint-order: stroke; stroke: #fffdf7; stroke-width: 1.2px; }
+  #dbg { font: 11px/1.4 monospace; color: #6d4c41; white-space: pre-wrap; margin-top: 8px; }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
   /* zukan */
-  #zukan { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  #zukan { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
   .z { text-align: center; border-radius: 12px; padding: 4px 0; background: #eee; color: #bbb; }
-  .z .k { font-size: 1.8rem; line-height: 1.1; display: block; }
-  .z .r { font-size: .7rem; }
+  .z .k { font-size: 1.35rem; line-height: 1.1; display: block; }
+  .z .r { font-size: .5rem; white-space: nowrap; overflow: hidden; }
   .z.got { background: #fff3c4; color: var(--ink); }
-  .z .c { font-size: .7rem; }
+  .z .c { font-size: .5rem; }
 
   #cheer { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     font-size: 4rem; pointer-events: none; opacity: 0; }
@@ -86,13 +90,24 @@
 </head>
 <body>
 <div id="app">
-  <h1>かんじ けいさん</h1>
-  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">30</span></span></div>
+  <h1>かんじ けいさん <button id="gear" aria-label="せってい" style="font-size:1.3rem;border:0;background:none;cursor:pointer">⚙️</button></h1>
+  <section id="panel" class="card hidden">
+    <b>おうちのひとへ(せってい)</b>
+    <div class="opt">かきとりの むずかしさ:
+      <label><input type="radio" name="lv" value="0"> やさしい</label>
+      <label><input type="radio" name="lv" value="1"> ふつう</label>
+      <label><input type="radio" name="lv" value="2"> きびしい</label></div>
+    <label class="opt"><input type="checkbox" id="optAuto"> おてほんを じどうで みせる</label>
+    <label class="opt"><input type="checkbox" id="optQ"> はね・はらい・とめ を みる(ほめるだけ・たまに ヒント)</label>
+    <label class="opt"><input type="checkbox" id="optDbg"> はんてい ログを だす(ちょうせい用)</label>
+    <button class="big-btn sub" id="resetBtn" style="font-size:1rem;padding:10px">きろくを ぜんぶ けす</button>
+  </section>
+  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">80</span></span></div>
   <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
   <div class="tabs">
     <button id="tabCalc" class="tab">🔢 けいさん</button>
     <button id="tabOpp" class="tab">↔ はんたいことば</button>
-    <button id="tabNat" class="tab">🌳 しぜんの かんじ</button>
+    <button id="tabNat" class="tab">🖼️ えから かんじ</button>
     <button id="tabRead" class="tab">📖 よみクイズ</button>
   </div>
 
@@ -107,6 +122,7 @@
   <section id="trace" class="card hidden">
     <p id="traceMsg"></p>
     <div id="pad"><svg id="sv" viewBox="0 0 109 109"></svg></div>
+    <div id="dbg" class="hidden"></div>
     <div class="row">
       <button class="big-btn sub" id="hintBtn">👀 おてほん</button>
       <button class="big-btn sub" id="clearBtn">🔄 やりなおし</button>
@@ -146,14 +162,67 @@ const NAT = [
   { n: 27, k: "川", r: "かわ", e: "🏞️" }, { n: 28, k: "田", r: "た", e: "🌾" },
   { n: 29, k: "石", r: "いし", e: "🪨" }, { n: 30, k: "雨", r: "あめ", e: "🌧️" },
 ];
-const ALL = KANJI.concat(OPP, NAT);
+const MORE = [
+  { n: 31, k: "円", r: "えん", e: "💴" },
+  { n: 32, k: "王", r: "おう", e: "👑" },
+  { n: 33, k: "音", r: "おと", e: "🎵" },
+  { n: 34, k: "花", r: "はな", e: "🌸" },
+  { n: 35, k: "貝", r: "かい", e: "🐚" },
+  { n: 36, k: "学", r: "がく", e: "📚" },
+  { n: 37, k: "気", r: "き" },
+  { n: 38, k: "休", r: "やすむ", e: "😴" },
+  { n: 39, k: "玉", r: "たま", e: "🔮" },
+  { n: 40, k: "金", r: "かね", e: "🪙" },
+  { n: 41, k: "空", r: "そら", e: "☁️" },
+  { n: 42, k: "犬", r: "いぬ", e: "🐶" },
+  { n: 43, k: "見", r: "みる" },
+  { n: 44, k: "口", r: "くち", e: "👄" },
+  { n: 45, k: "校", r: "こう", e: "🏫" },
+  { n: 46, k: "子", r: "こ", e: "👶" },
+  { n: 47, k: "糸", r: "いと", e: "🧵" },
+  { n: 48, k: "字", r: "じ", e: "🔤" },
+  { n: 49, k: "耳", r: "みみ", e: "👂" },
+  { n: 50, k: "車", r: "くるま", e: "🚗" },
+  { n: 51, k: "手", r: "て", e: "✋" },
+  { n: 52, k: "人", r: "ひと", e: "🧍" },
+  { n: 53, k: "正", r: "ただしい" },
+  { n: 54, k: "生", r: "うまれる" },
+  { n: 55, k: "青", r: "あお", e: "🔵" },
+  { n: 56, k: "夕", r: "ゆう", e: "🌇" },
+  { n: 57, k: "赤", r: "あか", e: "🔴" },
+  { n: 58, k: "千", r: "せん" },
+  { n: 59, k: "先", r: "さき" },
+  { n: 60, k: "早", r: "はやい" },
+  { n: 61, k: "草", r: "くさ", e: "🌱" },
+  { n: 62, k: "足", r: "あし", e: "🦶" },
+  { n: 63, k: "村", r: "むら", e: "🏘️" },
+  { n: 64, k: "竹", r: "たけ", e: "🎋" },
+  { n: 65, k: "中", r: "なか" },
+  { n: 66, k: "虫", r: "むし", e: "🐛" },
+  { n: 67, k: "町", r: "まち", e: "🏙️" },
+  { n: 68, k: "天", r: "てん", e: "🌌" },
+  { n: 69, k: "土", r: "つち", e: "🟫" },
+  { n: 70, k: "年", r: "とし" },
+  { n: 71, k: "白", r: "しろ", e: "⚪" },
+  { n: 72, k: "百", r: "ひゃく" },
+  { n: 73, k: "文", r: "ぶん" },
+  { n: 74, k: "本", r: "ほん", e: "📕" },
+  { n: 75, k: "名", r: "な" },
+  { n: 76, k: "目", r: "め", e: "👁️" },
+  { n: 77, k: "立", r: "たつ" },
+  { n: 78, k: "力", r: "ちから", e: "💪" },
+  { n: 79, k: "林", r: "はやし", e: "🌲🌲" },
+  { n: 80, k: "森", r: "もり", e: "🌲🌲🌲" },
+];
+const ALL = KANJI.concat(OPP, NAT, MORE);
+const PIC = ALL.filter(d => d.e);      // 絵が出せる字
 const TOTAL = ALL.length;
 const byN = n => ALL[n - 1];
 const STAGES = [
-  { at: 0, e: "🥚", name: "たまご" }, { at: 4, e: "🐣", name: "ひよこ" },
-  { at: 8, e: "🐥", name: "こどり" }, { at: 13, e: "🐔", name: "にわとり" },
-  { at: 18, e: "🦜", name: "おうむ" }, { at: 23, e: "🦚", name: "くじゃく" },
-  { at: 27, e: "🐉", name: "ドラゴン" }, { at: 30, e: "🦄", name: "でんせつ" },
+  { at: 0, e: "🥚", name: "たまご" }, { at: 6, e: "🐣", name: "ひよこ" },
+  { at: 14, e: "🐥", name: "こどり" }, { at: 24, e: "🐔", name: "にわとり" },
+  { at: 36, e: "🦜", name: "おうむ" }, { at: 48, e: "🦚", name: "くじゃく" },
+  { at: 62, e: "🐉", name: "ドラゴン" }, { at: 80, e: "🦄", name: "でんせつ" },
 ];
 const stageIdx = c => STAGES.reduce((i, st, j) => (c >= st.at ? j : i), 0);
 const partner = n => (n % 2 === 1 ? n + 1 : n - 1);
@@ -166,6 +235,9 @@ function save() {
   try { localStorage.setItem("kanjiTashizan", JSON.stringify(state)); } catch (e) {}
 }
 const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc" }, load());
+// おうちのひと用の せってい(0:やさしい 1:ふつう 2:きびしい)
+state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false }, state.set || {});
+const TOL = [1.35, 1, 0.75];       // やさしい ほど 許す はんいが ひろい
 
 // ---- 音 ----
 function speak(text) {
@@ -192,7 +264,7 @@ function weighted(pool) {
 }
 function pickQuestion() {
   if (state.mode === "nat" || state.mode === "read") {
-    const src = state.mode === "nat" ? NAT : ALL;
+    const src = state.mode === "nat" ? PIC : ALL;
     return weighted(src.map(d => ({ a: d.n, ans: d.n, mode: state.mode, w: 1 + (state.miss[d.n] || 0) * 2 })));
   }
   if (state.mode === "opp") {
@@ -218,7 +290,7 @@ function pickQuestion() {
 function renderZukan() {
   $("zukan").innerHTML = ALL.map(d => {
     const g = state.got[d.n];
-    return `<div class="z ${g ? "got" : ""}"><span class="k">${g ? d.k : "?"}</span><span class="r">${g ? d.r : ""}</span>${g ? `<span class="c">×${g}</span>` : ""}</div>`;
+    return `<div class="z ${g ? "got" : ""}" title="${g ? d.k + " ×" + g : ""}"><span class="k">${g ? d.k : "?"}</span><span class="r">${g ? d.r : ""}</span></div>`;
   }).join("");
   $("gotCount").textContent = Object.keys(state.got).length;
   $("totalCount").textContent = TOTAL;
@@ -241,7 +313,7 @@ function newQuestion() {
   locked = false;
   cur = pickQuestion();
   const opp = cur.mode === "opp", nat = cur.mode === "nat", rd = cur.mode === "read";
-  const lo = opp ? 11 : nat ? 21 : rd ? 1 : 1, hi = opp ? 20 : nat ? 30 : rd ? 30 : 10;
+  const pool = (opp ? OPP : nat ? PIC : rd ? ALL : KANJI).map(d => d.n);
   if (nat) {
     $("formula").innerHTML = `<span class="pic" id="pic">${byN(cur.a).e}</span><span class="op">=</span><span class="q">?</span>`;
     $("hint").textContent = "この え は どの かんじかな?";
@@ -258,7 +330,7 @@ function newQuestion() {
   // 選択肢: 正解 + ダミー2つ
   const set = new Set([cur.ans]);
   while (set.size < 3) {
-    const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+    const n = pool[Math.floor(Math.random() * pool.length)];
     if (rd && byN(n).r === byN(cur.ans).r) continue; // おなじ よみは まぜない
     set.add(n);
   }
@@ -327,6 +399,47 @@ function refPoints(d) {
   return resample(raw, N);
 }
 
+const HOOK = "㇚㇁㇆㇖㇟㇈㇂㇃㇉", SWEEP = "㇒㇓㇏㇀", STOP = "㇐㇑㇕㇄";
+function strokeKind(type) {         // はね / はらい / とめ / (みない)
+  if (!type || type.includes("/")) return null;
+  const c = type[0];
+  return HOOK.includes(c) ? "hook" : SWEEP.includes(c) ? "sweep" : STOP.includes(c) ? "stop" : null;
+}
+const KIND_LABEL = { hook: "はね", sweep: "はらい", stop: "とめ" };
+function arcAt(pts, f) {            // 長さの f(0〜1) の ところの 点
+  const L = [0];
+  for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  const t = L[L.length - 1] * f;
+  let j = 1; while (j < pts.length - 1 && L[j] < t) j++;
+  const span = L[j] - L[j - 1] || 1, g = Math.min(1, Math.max(0, (t - L[j - 1]) / span));
+  return { x: pts[j - 1].x + (pts[j].x - pts[j - 1].x) * g, y: pts[j - 1].y + (pts[j].y - pts[j - 1].y) * g,
+           t: (pts[j - 1].t ?? 0) + ((pts[j].t ?? 0) - (pts[j - 1].t ?? 0)) * g, total: L[L.length - 1] };
+}
+function hookTurn(pts) {            // さいごの むきが どれだけ まがったか(度)。+/- は まがる ほうこう
+  const a = arcAt(pts, .45), b = arcAt(pts, .85), c = arcAt(pts, .93), e = pts[pts.length - 1];
+  if (Math.hypot(e.x - c.x, e.y - c.y) < 1.5) return 0;
+  let t = (Math.atan2(e.y - c.y, e.x - c.x) - Math.atan2(b.y - a.y, b.x - a.x)) * 180 / Math.PI;
+  while (t > 180) t -= 360; while (t < -180) t += 360;
+  return t;
+}
+function tailRatio(pts) {           // さいごの 25% の はやさ ÷ ぜんたいの はやさ(1より小さい=ゆっくり とまった)
+  const s = pts[0], q = arcAt(pts, .75), e = pts[pts.length - 1];
+  const dtAll = (e.t ?? 0) - (s.t ?? 0), dtTail = (e.t ?? 0) - q.t;
+  if (!(dtAll > 30) || !(dtTail > 5)) return null;
+  const tailLen = q.total * .25;
+  return (tailLen / dtTail) / (q.total / dtAll);
+}
+function quality(userPts, meta) {   // { kind, ok:true/false/null, info }
+  if (!meta.kind) return { kind: null };
+  if (meta.kind === "hook") {
+    const ut = hookTurn(userPts);
+    return { kind: "hook", ok: Math.abs(ut) >= 35 && Math.sign(ut) === Math.sign(meta.turn), info: `hook ${Math.round(ut)}° (おてほん ${Math.round(meta.turn)}°)` };
+  }
+  const r = tailRatio(userPts);
+  if (r === null) return { kind: meta.kind, ok: null, info: "speed n/a" };
+  return { kind: meta.kind, ok: meta.kind === "sweep" ? r >= .6 : r <= .75, info: `tail速度比 ${r.toFixed(2)}` };
+}
+
 function startTrace() {
   const d = byN(cur.ans);
   $("quiz").classList.add("hidden");
@@ -334,17 +447,28 @@ function startTrace() {
   const ds = window.STROKES && STROKES[d.k];
   if (!ds) { finishTrace(); return; }      // データがない字は そのまま ずかんへ
   sv.innerHTML = "";
-  tr = { ds, refs: ds.map(refPoints), idx: 0, misses: 0, busy: false, user: null, k: d.k };
+  const types = (window.STROKE_TYPES && STROKE_TYPES[d.k]) || [];
+  const meta = ds.map((x, i) => {
+    const kind = strokeKind(types[i]), path = el("path", { d: x }), L = path.getTotalLength(), raw = [];
+    for (let j = 0; j <= 60; j++) { const q = path.getPointAtLength(L * j / 60); raw.push({ x: q.x, y: q.y }); }
+    return { kind, turn: kind === "hook" ? hookTurn(raw) : 0, end: raw[60] };
+  });
+  tr = { ds, refs: ds.map(refPoints), meta, idx: 0, misses: 0, busy: false, user: null, k: d.k, qOk: 0, qTotal: 0 };
   ds.forEach(x => sv.appendChild(el("path", { d: x }, "ghost")));
-  showNext(true);
+  showNext(state.set.autoDemo);
 }
 function say(t) { $("traceMsg").textContent = t; }
-function clearMarks() { sv.querySelectorAll(".startdot,.startnum,.demo").forEach(e => e.remove()); }
+function clearMarks() { sv.querySelectorAll(".startdot,.startnum,.demo,.endtag").forEach(e => e.remove()); }
 function showNext(withDemo) {
   clearMarks();
   const i = tr.idx, st = tr.refs[i].pts[0];
   sv.appendChild(el("circle", { cx: st.x, cy: st.y, r: 6 }, "startdot"));
   const t = el("text", { x: st.x, y: st.y }, "startnum"); t.textContent = i + 1; sv.appendChild(t);
+  const m = tr.meta[i];
+  if (state.set.quality && m.kind) {
+    const tg = el("text", { x: Math.min(100, Math.max(4, m.end.x + 3)), y: Math.min(106, Math.max(6, m.end.y + 5)) }, "endtag");
+    tg.textContent = KIND_LABEL[m.kind]; sv.appendChild(tg);
+  }
   say(`「${tr.k}」 ${i + 1}かくめ(${tr.ds.length}かくの うち)  ●から ひとふで!`);
   if (withDemo) demo();
 }
@@ -357,21 +481,35 @@ function demo() {                         // おてほん: 筆の動きをアニ
   dp.style.transition = "stroke-dashoffset 1.1s ease-in-out"; dp.style.strokeDashoffset = 0;
   setTimeout(() => dp.remove(), 1800);
 }
-function acceptStroke(auto) {
+function acceptStroke(auto, userPts) {
   const i = tr.idx, dp = el("path", { d: tr.ds[i], pathLength: 1 }, "done");
   dp.style.strokeDasharray = 1; dp.style.strokeDashoffset = auto ? 1 : 0;   // 自動のときは なぞって見せる
   sv.appendChild(dp);
   if (auto) { dp.getBoundingClientRect(); dp.style.transition = "stroke-dashoffset .9s"; dp.style.strokeDashoffset = 0; }
+  // はね・はらい・とめ (ほめるだけ。ダメだしで とめない)
+  let qmsg = "", tip = "";
+  if (!auto && state.set.quality && userPts) {
+    const q = quality(userPts, tr.meta[i]);
+    if (q.ok !== null && q.kind) {
+      if (q.kind !== "stop") { tr.qTotal++; if (q.ok) tr.qOk++; }   // 「とめ」は ほめるだけ(点数に いれない)
+      if (q.ok) qmsg = { hook: "✨ はねも ばっちり!", sweep: "✨ すーっと はらえたね!", stop: "✨ ぴたっと とまったね!" }[q.kind];
+      else tip = { hook: "ここは さいごに ピッと はねると もっと いいよ", sweep: "ここは さいごまで すーっと はらうと もっと いいよ", stop: "" }[q.kind];
+    }
+    window.lastQ = q.info;
+  }
   tr.idx++; tr.misses = 0;
   if (tr.idx >= tr.ds.length) {
     clearMarks(); tr.busy = true;
-    say(`かんせい! 「${tr.k}」が かけたね 🎉`); speak(byN(cur.ans).r);
+    const all = tr.qTotal > 0 && tr.qOk === tr.qTotal;
+    say(`かんせい! 「${tr.k}」が かけたね 🎉` + (tr.qTotal ? `  ていねい ✨${tr.qOk}/${tr.qTotal}` : ""));
+    if (all) { state.stars += 1; cheer("🌟"); }
+    speak(byN(cur.ans).r);
     setTimeout(finishTrace, 1300);
   } else {
     tr.busy = !!auto;
     const msgs = ["いいね!", "じょうず!", "そのちょうし!", "ばっちり!"];
     if (auto) setTimeout(() => { tr.busy = false; showNext(false); say(`つぎは ${tr.idx + 1}かくめ。●から やってみよう`); }, 1100);
-    else { showNext(false); say(`${msgs[i % msgs.length]} つぎは ${tr.idx + 1}かくめ ●から!`); }
+    else { showNext(false); say(`${qmsg || msgs[i % msgs.length]} ${tip ? tip + "。" : ""}つぎは ${tr.idx + 1}かくめ ●から!`); }
   }
 }
 function thin(pts, gap) {          // 手のふるえで ふえた こまかい点を へらす
@@ -384,21 +522,25 @@ function thin(pts, gap) {          // 手のふるえで ふえた こまかい�
   return out;
 }
 function judge(user) {
-  const u = resample(thin(user, 4), N), ref = tr.refs[tr.idx], lenOk = u.len > ref.len * 0.5 && u.len < ref.len * 1.9 + 40;
+  const K = TOL[state.set.level];
+  const u = resample(thin(user, 4), N), ref = tr.refs[tr.idx];
+  const lenOk = u.len > ref.len * 0.5 / K && u.len < (ref.len * 1.9 + 40) * K;
   const near = r => {
-    const short = r.len < 45, tm = short ? 11 : 17, te = short ? 15 : 24;   // みじかい画は きびしめ
+    const short = r.len < 45, tm = (short ? 11 : 17) * K, te = (short ? 15 : 24) * K;   // みじかい画は きびしめ
     const rs = r.pts[0], re = r.pts[N - 1], us = u.pts[0], ue = u.pts[N - 1];
     const dir = (ue.x - us.x) * (re.x - rs.x) + (ue.y - us.y) * (re.y - rs.y);   // むきが おなじか
     return meanDist(u.pts, r.pts) < tm && Math.hypot(us.x - rs.x, us.y - rs.y) < te
       && Math.hypot(ue.x - re.x, ue.y - re.y) < te && (Math.hypot(re.x - rs.x, re.y - rs.y) < 8 || dir > 0);
   };
+  window.lastJ = `画${tr.idx + 1} 平均ずれ ${meanDist(u.pts, ref.pts).toFixed(1)} / 始点ずれ ${Math.hypot(u.pts[0].x - ref.pts[0].x, u.pts[0].y - ref.pts[0].y).toFixed(1)}`
+    + ` / 終点ずれ ${Math.hypot(u.pts[N - 1].x - ref.pts[N - 1].x, u.pts[N - 1].y - ref.pts[N - 1].y).toFixed(1)} / 長さ比 ${(u.len / ref.len).toFixed(2)}`;
   if (lenOk && near(ref)) return { ok: true };
   for (let j = tr.idx + 1; j < tr.refs.length; j++) if (near(tr.refs[j])) return { why: "order", j };
   const rev = { pts: [...u.pts].reverse() };
-  if (lenOk && meanDist(rev.pts, ref.pts) < (ref.len < 45 ? 11 : 17)) return { why: "reverse" };
-  if (u.len < ref.len * 0.5) return { why: "short" };
+  if (lenOk && meanDist(rev.pts, ref.pts) < (ref.len < 45 ? 11 : 17) * K) return { why: "reverse" };
+  if (u.len < ref.len * 0.5 / K) return { why: "short" };
   const sd = Math.hypot(u.pts[0].x - ref.pts[0].x, u.pts[0].y - ref.pts[0].y);
-  return { why: sd >= 24 ? "start" : "shape" };
+  return { why: sd >= 24 * K ? "start" : "shape" };
 }
 function onMiss(r, user) {
   const bad = el("polyline", { points: user.map(p => `${p.x},${p.y}`).join(" ") }, "user bad");
@@ -417,20 +559,20 @@ function onMiss(r, user) {
     setTimeout(() => acceptStroke(true), 1300);
     return;
   }
-  say(m); demo();                          // まちがえたら おてほんを みせて ガイド
+  say(m); if (state.set.autoDemo) demo();   // まちがえたら おてほんを みせて ガイド
 }
 
 function ptr(e) { const r = sv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 109, y: (e.clientY - r.top) / r.height * 109 }; }
 sv.addEventListener("pointerdown", e => {
   if (!tr || tr.busy) return;
   sv.setPointerCapture(e.pointerId);
-  const p = ptr(e);
+  const p = ptr(e); p.t = e.timeStamp;
   tr.user = { pts: [p], line: el("polyline", { points: `${p.x},${p.y}` }, "user") };
   sv.appendChild(tr.user.line);
 });
 sv.addEventListener("pointermove", e => {
   if (!tr || !tr.user) return;
-  const p = ptr(e); tr.user.pts.push(p);
+  const p = ptr(e); p.t = e.timeStamp; tr.user.pts.push(p);
   tr.user.line.setAttribute("points", tr.user.pts.map(q => `${q.x},${q.y}`).join(" "));
 });
 function endStroke() {
@@ -438,7 +580,9 @@ function endStroke() {
   const u = tr.user; tr.user = null; u.line.remove();
   if (u.pts.length < 3) { say("ゆびを すべらせて ひいてね"); return; }
   const r = judge(u.pts);
-  if (r.ok) acceptStroke(false); else onMiss(r, u.pts);
+  const kept = u.pts;
+  if (r.ok) acceptStroke(false, thin(kept, 2)); else onMiss(r, kept);
+  if (state.set.debug) $("dbg").textContent = `${window.lastJ}\n判定: ${r.ok ? "OK" : r.why}${window.lastQ ? "\n" + window.lastQ : ""}`;
 }
 ["pointerup", "pointercancel"].forEach(t => sv.addEventListener(t, endStroke));
 $("hintBtn").addEventListener("click", () => { if (tr && !tr.busy) { demo(); say(`${tr.idx + 1}かくめは こう! ●から ひいてね`); } });
@@ -458,6 +602,22 @@ function finishTrace() {
   if (evolved) speak("しんか!");
   setTimeout(newQuestion, 900);
 }
+
+function applySettings() {
+  document.querySelectorAll('input[name="lv"]').forEach(r => { r.checked = +r.value === state.set.level; });
+  $("optAuto").checked = state.set.autoDemo; $("optQ").checked = state.set.quality; $("optDbg").checked = state.set.debug;
+  $("dbg").classList.toggle("hidden", !state.set.debug);
+}
+$("gear").addEventListener("click", () => $("panel").classList.toggle("hidden"));
+document.querySelectorAll('input[name="lv"]').forEach(r => r.addEventListener("change", () => { state.set.level = +r.value; save(); }));
+$("optAuto").addEventListener("change", e => { state.set.autoDemo = e.target.checked; save(); });
+$("optQ").addEventListener("change", e => { state.set.quality = e.target.checked; save(); });
+$("optDbg").addEventListener("change", e => { state.set.debug = e.target.checked; save(); applySettings(); });
+$("resetBtn").addEventListener("click", () => {
+  if (!confirm("ずかんも ⭐も ぜんぶ きえます。いいですか?")) return;
+  state.stars = 0; state.got = {}; state.miss = {}; save(); renderZukan(); newQuestion();
+});
+applySettings();
 
 function setMode(m) { state.mode = m; save(); renderZukan(); newQuestion(); }
 $("tabCalc").addEventListener("click", () => setMode("calc"));
