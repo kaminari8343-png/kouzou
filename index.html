@@ -91,13 +91,14 @@
 </head>
 <body>
 <div id="app">
-  <h1>かんじ けいさん <button id="gear" aria-label="せってい" style="font-size:1.3rem;border:0;background:none;cursor:pointer">⚙️</button></h1>
+  <h1>かんじ けいさん <button id="sndBtn" aria-label="おと" style="font-size:1.3rem;border:0;background:none;cursor:pointer">🔊</button><button id="gear" aria-label="せってい" style="font-size:1.3rem;border:0;background:none;cursor:pointer">⚙️</button></h1>
   <section id="panel" class="card hidden">
     <b>おうちのひとへ(せってい)</b>
     <div class="opt">かきとりの むずかしさ:
       <label><input type="radio" name="lv" value="0"> やさしい</label>
       <label><input type="radio" name="lv" value="1"> ふつう</label>
       <label><input type="radio" name="lv" value="2"> きびしい</label></div>
+    <label class="opt"><input type="checkbox" id="optSnd"> おとを ならす(こうかおん・よみあげ)</label>
     <label class="opt"><input type="checkbox" id="optAuto"> おてほんを じどうで みせる</label>
     <label class="opt"><input type="checkbox" id="optQ"> はね・はらい・とめ を みる(ほめるだけ・たまに ヒント)</label>
     <label class="opt"><input type="checkbox" id="optDbg"> はんてい ログを だす(ちょうせい用)</label>
@@ -237,11 +238,42 @@ function save() {
 }
 const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc" }, load());
 // おうちのひと用の せってい(0:やさしい 1:ふつう 2:きびしい)
-state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false }, state.set || {});
+state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, state.set || {});
 const TOL = [1.35, 1, 0.75];       // やさしい ほど 許す はんいが ひろい
 
 // ---- 音 ----
+let ac = null;
+function audio() {                 // 画面を さわった あとに はじめて 音が だせる
+  if (!state.set.sound) return null;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+    return ac;
+  } catch (e) { return null; }
+}
+function tone(freq, at, dur, type, vol) {
+  const c = audio(); if (!c) return;
+  const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const PENTA = [523, 587, 659, 784, 880, 988, 1047, 1175];
+const sfx = {
+  tap() { tone(740, 0, 0.07, "triangle", 0.08); },
+  ok() { [523, 659, 784].forEach((f, i) => tone(f, i * 0.09, 0.22, "triangle", 0.16)); },
+  ng() { tone(330, 0, 0.16, "sine", 0.11); tone(262, 0.13, 0.22, "sine", 0.11); },     // やさしい ひくい おと
+  stroke(i) { tone(PENTA[i % PENTA.length], 0, 0.16, "triangle", 0.13); },             // 1画ごとに すこしずつ たかく
+  done() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.35, "triangle", 0.15)); tone(1568, 0.34, 0.4, "sine", 0.08); },
+  sparkle() { [1568, 2093, 2637].forEach((f, i) => tone(f, i * 0.07, 0.2, "sine", 0.07)); },
+  evolve() { PENTA.forEach((f, i) => tone(f, i * 0.07, 0.25, "triangle", 0.13)); [523, 659, 784, 1047].forEach(f => tone(f, 0.62, 0.7, "sine", 0.1)); },
+};
+document.addEventListener("pointerdown", () => { audio(); }, { once: false, passive: true });   // はじめの タップで おとを つかえるように
+
 function speak(text) {
+  if (!state.set.sound) return;
   try {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "ja-JP"; u.rate = 0.9;
@@ -353,7 +385,7 @@ $("choices").addEventListener("click", e => {
   const n = +btn.dataset.n;
   if (n === cur.ans) {
     locked = true;
-    btn.classList.add("ok");
+    btn.classList.add("ok"); sfx.ok();
     $("hint").textContent = `せいかい! ${byN(n).k} は「${byN(n).r}」`;
     speak(byN(n).r);
     cheer("🎉");
@@ -364,7 +396,7 @@ $("choices").addEventListener("click", e => {
     }
     setTimeout(startTrace, 1300);
   } else {
-    btn.classList.add("ng");
+    btn.classList.add("ng"); sfx.ng();
     state.miss[cur.ans] = (state.miss[cur.ans] || 0) + 1; save();
     $("hint").textContent = "おしい! もういっかい!";
   }
@@ -500,14 +532,14 @@ function acceptStroke(auto, userPts) {
   }
   tr.idx++; tr.misses = 0;
   if (tr.idx >= tr.ds.length) {
-    clearMarks(); tr.busy = true;
+    clearMarks(); tr.busy = true; sfx.done();
     const all = tr.qTotal > 0 && tr.qOk === tr.qTotal;
     say(`かんせい! 「${tr.k}」が かけたね 🎉` + (tr.qTotal ? `  ていねい ✨${tr.qOk}/${tr.qTotal}` : ""));
-    if (all) { state.stars += 1; cheer("🌟"); }
+    if (all) { state.stars += 1; cheer("🌟"); setTimeout(sfx.sparkle, 450); }
     speak(byN(cur.ans).r);
     setTimeout(finishTrace, 1300);
   } else {
-    tr.busy = !!auto;
+    tr.busy = !!auto; sfx.stroke(i);
     const msgs = ["いいね!", "じょうず!", "そのちょうし!", "ばっちり!"];
     if (auto) setTimeout(() => { tr.busy = false; showNext(false); say(`つぎは ${tr.idx + 1}かくめ。●から やってみよう`); }, 1100);
     else { showNext(false); say(`${qmsg || msgs[i % msgs.length]} ${tip ? tip + "。" : ""}つぎは ${tr.idx + 1}かくめ ●から!`); }
@@ -546,7 +578,7 @@ function judge(user) {
 function onMiss(r, user) {
   const bad = el("polyline", { points: user.map(p => `${p.x},${p.y}`).join(" ") }, "user bad");
   sv.appendChild(bad); bad.getBoundingClientRect(); bad.style.opacity = 0; setTimeout(() => bad.remove(), 700);
-  tr.misses++;
+  tr.misses++; sfx.ng();
   const n = tr.idx + 1;
   const m = {
     order: `その ひつじゅんは ${r.j + 1}かくめ。さきに ${n}かくめ! ●から どうぞ`,
@@ -586,7 +618,7 @@ function endStroke() {
   if (state.set.debug) $("dbg").textContent = `${window.lastJ}\n判定: ${r.ok ? "OK" : r.why}${window.lastQ ? "\n" + window.lastQ : ""}`;
 }
 ["pointerup", "pointercancel"].forEach(t => sv.addEventListener(t, endStroke));
-$("hintBtn").addEventListener("click", () => { if (tr && !tr.busy) { demo(); say(`${tr.idx + 1}かくめは こう! ●から ひいてね`); } });
+$("hintBtn").addEventListener("click", () => { sfx.tap(); if (tr && !tr.busy) { demo(); say(`${tr.idx + 1}かくめは こう! ●から ひいてね`); } });
 $("clearBtn").addEventListener("click", () => { if (tr && !tr.busy) startTrace(); });
 
 function finishTrace() {
@@ -600,7 +632,7 @@ function finishTrace() {
   save(); renderZukan();
   cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!"
     : evolved ? `${STAGES[stageIdx(Object.keys(state.got).length)].e} しんか!` : "⭐");
-  if (evolved) speak("しんか!");
+  if (evolved) { speak("しんか!"); sfx.evolve(); }
   setTimeout(newQuestion, 900);
 }
 
@@ -608,8 +640,11 @@ function applySettings() {
   document.querySelectorAll('input[name="lv"]').forEach(r => { r.checked = +r.value === state.set.level; });
   $("optAuto").checked = state.set.autoDemo; $("optQ").checked = state.set.quality; $("optDbg").checked = state.set.debug;
   $("dbg").classList.toggle("hidden", !state.set.debug);
+  $("optSnd").checked = state.set.sound; $("sndBtn").textContent = state.set.sound ? "🔊" : "🔇";
 }
-$("gear").addEventListener("click", () => $("panel").classList.toggle("hidden"));
+$("gear").addEventListener("click", () => { sfx.tap(); $("panel").classList.toggle("hidden"); });
+$("sndBtn").addEventListener("click", () => { state.set.sound = !state.set.sound; save(); applySettings(); sfx.tap(); });
+$("optSnd").addEventListener("change", e => { state.set.sound = e.target.checked; save(); applySettings(); sfx.tap(); });
 document.querySelectorAll('input[name="lv"]').forEach(r => r.addEventListener("change", () => { state.set.level = +r.value; save(); }));
 $("optAuto").addEventListener("change", e => { state.set.autoDemo = e.target.checked; save(); });
 $("optQ").addEventListener("change", e => { state.set.quality = e.target.checked; save(); });
@@ -627,7 +662,7 @@ $("resetBtn").addEventListener("click", () => {
 });
 applySettings();
 
-function setMode(m) { state.mode = m; save(); renderZukan(); newQuestion(); }
+function setMode(m) { sfx.tap(); state.mode = m; save(); renderZukan(); newQuestion(); }
 $("tabCalc").addEventListener("click", () => setMode("calc"));
 $("tabOpp").addEventListener("click", () => setMode("opp"));
 $("tabNat").addEventListener("click", () => setMode("nat"));
