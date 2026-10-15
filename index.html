@@ -91,6 +91,74 @@
   #rvLine { text-align: center; font-size: .95rem; color: #c66900; }
   .sent { font-size: 1.7rem; line-height: 1.6; text-align: center; padding: 8px 0; }
   .blank { display: inline-block; min-width: 1.6em; color: var(--main); border-bottom: 4px solid var(--main); }
+  .strip { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 1.05rem; min-height: 1.4em; }
+  .strip b { color: #c66900; }
+  #daily { padding: 10px 14px; }
+  #daily h3, #rewards h3 { margin: 0 0 6px; font-size: 1rem; }
+  .ms { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: .95rem; }
+  .ms .bar2 { flex: 1; height: 8px; background: #eee; border-radius: 6px; overflow: hidden; min-width: 40px; }
+  .ms .bar2 i { display: block; height: 100%; background: var(--main); }
+  .ms.done { color: #43a047; } .ms.done .bar2 i { background: #43a047; }
+  .rtabs { display: flex; gap: 8px; margin-bottom: 8px; }
+  .rtabs .tab { flex: 1; font-size: 1rem; padding: 8px; }
+  #bgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .bd { text-align: center; background: #fff3c4; border-radius: 12px; padding: 6px 2px; font-size: .7rem; line-height: 1.25; }
+  .bd .be { font-size: 1.7rem; display: block; }
+  .bd.lock { background: #eee; color: #aaa; } .bd.lock .be { filter: grayscale(1); opacity: .35; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--soft); }
+  .item .ie { font-size: 1.8rem; width: 2.2rem; text-align: center; }
+  .item .in { flex: 1; font-size: .95rem; }
+  .item button { font: inherit; font-size: .95rem; padding: 6px 12px; border: 0; border-radius: 12px; background: var(--main); color: #fff; cursor: pointer; }
+  .item button.off { background: #bdbdbd; } .item button.on { background: #43a047; }
+  .petwrap { position: relative; display: inline-block; }
+  .acc { position: absolute; font-size: 1.15rem; line-height: 1; pointer-events: none; }
+  .acc.head { top: -.45rem; left: 50%; transform: translateX(-50%); }
+  .acc.face { top: 1.15rem; left: 50%; transform: translateX(-50%); }
+  .acc.neck { bottom: -.15rem; left: 50%; transform: translateX(-50%); }
+  .acc.side { right: -1.1rem; bottom: .1rem; }
+  #toast { position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 20;
+    background: #3e2723; color: #fff8e1; padding: 10px 16px; border-radius: 14px; font-size: 1rem; max-width: 92vw; text-align: center; box-shadow: 0 4px 12px #0004; }
+  #town h3 { margin: 0; font-size: 1.05rem; }
+  .thead > div:first-child { min-width: 0; }
+  .thead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .tsub { font-size: .85rem; color: #8d6e63; }
+  .tchest { flex: none; white-space: nowrap; border: 0; background: #fff3c4; border-radius: 14px; padding: 4px 10px; font: inherit; font-size: .9rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .tchest img { width: 34px; height: 34px; object-fit: contain; }
+  .tchest.ready { animation: pulse2 1.2s ease-in-out infinite; background: #ffe082; }
+  .tchest.done { opacity: .55; }
+  @keyframes pulse2 { 50% { transform: scale(1.07); } }
+  .crew { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .crew button { border: 0; background: #f1f8e9; border-radius: 12px; padding: 2px; width: 44px; height: 44px; cursor: pointer; }
+  .crew button img { width: 100%; height: 100%; object-fit: contain; }
+  .crew button.lock { background: #eee; font-size: 1rem; color: #aaa; }
+  .crew button.hop img { animation: hop .5s ease-out; }
+  @keyframes hop { 40% { transform: translateY(-10px) rotate(-6deg); } 70% { transform: translateY(0) rotate(4deg); } }
+  .tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tcell { background: linear-gradient(#eaf6dc, #d3eab8); border: 3px solid transparent; border-radius: 14px; padding: 4px 2px 4px; text-align: center; cursor: pointer;
+    font: inherit; font-size: .78rem; color: var(--ink); min-width: 0; }
+  .tcell img { display: block; width: 100%; height: 86px; object-fit: contain; margin: 0 auto 2px; pointer-events: none; }
+  .tcell { position: relative; }
+  .tcell.sel { border-color: var(--main); }
+  .tcell.pop img { animation: pop2 .7s ease-out; }
+  @keyframes pop2 { 0% { transform: scale(.3); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .tcell.add { background: #fff8e1; border: 3px dashed var(--main); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 118px; color: #c66900; font-size: .95rem; }
+  .tcell.add .plus { font-size: 2rem; line-height: 1; }
+  .tlv { color: #c66900; font-weight: bold; }
+  .tpanel { margin-top: 10px; background: #fffdf4; border: 2px solid var(--soft); border-radius: 14px; padding: 10px; }
+  .tpanel .big { display: flex; gap: 12px; align-items: center; }
+  .tpanel .big > img { width: 38%; max-width: 150px; height: auto; object-fit: contain; }
+  .tpanel .info { flex: 1; min-width: 0; }
+  .tpanel .nm { font-size: 1.15rem; font-weight: bold; }
+  .tbtn { white-space: nowrap; font: inherit; font-size: .92rem; border: 0; border-radius: 12px; padding: 8px 14px; background: var(--main); color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
+  .tbtn.off { background: #bdbdbd; }
+  .tbtn img { width: 20px; height: 20px; }
+  .tchip { display: inline-block; background: #fff3c4; border-radius: 10px; padding: 0 8px; margin-right: 4px; font-size: .95rem; }
+  .blist .bi { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--soft); }
+  .blist .bi img { width: 52px; height: 52px; object-fit: contain; flex: none; }
+  .blist .bi.lock img { filter: grayscale(1) brightness(.9); opacity: .45; }
+  .blist .bi .tx { flex: 1; min-width: 0; font-size: .92rem; }
+  .blist .bi.lock .tx { color: #9e9e9e; }
+  .newdot { display: inline-block; background: #e53935; color: #fff; border-radius: 10px; font-size: .7rem; padding: 0 6px; margin-left: 4px; vertical-align: middle; }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
@@ -137,6 +205,8 @@
   </section>
   <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">80</span></span></div>
   <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
+  <div id="gameStrip" class="strip"></div>
+  <section id="daily" class="card"></section>
   <div id="storageWarn" class="hidden" style="background:#ffebee;color:#c62828;border-radius:12px;padding:8px 12px;font-size:.9rem">⚠️ この がめんでは あそんだ きろくが のこりません。ふつうの ブラウザで ひらいてね(おうちのひとへ: ⚙️ の コードで きろくを とっておけます)</div>
   <div id="rvLine" class="hidden"></div>
   <div class="tabs">
@@ -168,12 +238,18 @@
   </section>
 
   <!-- ずかん -->
+  <section id="town" class="card"></section>
   <section class="card">
     <div style="text-align:center;margin-bottom:6px">かんじずかん</div>
     <div id="zukan"></div>
   </section>
+  <section id="rewards" class="card">
+    <div class="rtabs"><button id="rtBadge" class="tab on">🏅 バッジ</button><button id="rtShop" class="tab">🛍️ おみせ</button></div>
+    <div id="rBody"></div>
+  </section>
   <p class="credit">かきじゅんデータ: KanjiVG (CC BY-SA 3.0) <a href="https://kanjivg.tagaini.net">kanjivg.tagaini.net</a></p>
 </div>
+<div id="toast" class="hidden"></div>
 <div id="cheer"></div>
 
 <script src="strokes.js"></script>
@@ -378,6 +454,12 @@ try { navigator.storage && navigator.storage.persist && navigator.storage.persis
 const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc", review: {}, qn: 0 }, load());
 // おうちのひと用の せってい(0:やさしい 1:ふつう 2:きびしい)
 state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, state.set || {});
+state.streak = Object.assign({ last: "", n: 0 }, state.streak || {});
+state.daily = Object.assign({ date: "", ids: [], prog: {}, done: {} }, state.daily || {});
+state.stat = Object.assign({ ok: 0, ng: 0, writes: 0, revenge: 0, earned: 0, bestCombo: 0, missions: 0, modes: {} }, state.stat || {});
+state.town = Object.assign({ b: {}, order: [], collect: "" }, state.town || {});
+state.badges = state.badges || {}; state.owned = state.owned || {}; state.equip = state.equip || {};
+let combo = 0;                     // 1かいで れんぞく せいかい(アプリを とじると リセット)
 const hadSaved = !!(state.got && Object.keys(state.got).length) || state.stars > 0 || state.qn > 0;
 const TOL = [1.35, 1, 0.75];       // やさしい ほど 許す はんいが ひろい
 
@@ -407,6 +489,10 @@ const sfx = {
   ng() { tone(330, 0, 0.16, "sine", 0.11); tone(262, 0.13, 0.22, "sine", 0.11); },     // やさしい ひくい おと
   stroke(i) { tone(PENTA[i % PENTA.length], 0, 0.16, "triangle", 0.13); },             // 1画ごとに すこしずつ たかく
   done() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.35, "triangle", 0.15)); tone(1568, 0.34, 0.4, "sine", 0.08); },
+  combo(n) { const b = PENTA[Math.min(n, 7) % PENTA.length]; [b, b * 1.25, b * 1.5].forEach((f, i) => tone(f, i * 0.06, 0.18, "square", 0.07)); },
+  coin() { tone(988, 0, 0.08, "square", 0.07); tone(1319, 0.08, 0.25, "square", 0.07); },
+  badge() { [659, 784, 988, 1319].forEach((f, i) => tone(f, i * 0.09, 0.3, "triangle", 0.14)); tone(1976, 0.4, 0.5, "sine", 0.08); },
+  mission() { [523, 784, 1047].forEach((f, i) => tone(f, i * 0.1, 0.3, "triangle", 0.13)); },
   relearn() { [523, 659].forEach((f, i) => tone(f, i * 0.12, 0.3, "sine", 0.12)); },
   sparkle() { [1568, 2093, 2637].forEach((f, i) => tone(f, i * 0.07, 0.2, "sine", 0.07)); },
   evolve() { PENTA.forEach((f, i) => tone(f, i * 0.07, 0.25, "triangle", 0.13)); [523, 659, 784, 1047].forEach(f => tone(f, 0.62, 0.7, "sine", 0.1)); },
@@ -498,7 +584,7 @@ function renderZukan() {
   $("rvLine").textContent = `🔁 おぼえなおし ${rc}こ(もういちど チャレンジすると ずかんに のるよ)`;
   $("totalCount").textContent = TOTAL;
   const c = Object.keys(state.got).length, si = stageIdx(c), st = STAGES[si], nx = STAGES[si + 1];
-  $("petE").textContent = st.e;
+  $("petE").innerHTML = petHTML(st.e);
   $("petT").textContent = nx ? `${st.name}(つぎの しんかまで あと ${nx.at - c}こ)` : `${st.name}(さいきょう!)`;
   $("tabCalc").classList.toggle("on", state.mode === "calc");
   $("tabOpp").classList.toggle("on", state.mode === "opp");
@@ -507,6 +593,7 @@ function renderZukan() {
   $("tabSent").classList.toggle("on", state.mode === "sent");
   $("tabMix").classList.toggle("on", state.mode === "mix");
   $("stars").textContent = state.stars;
+  if (typeof renderTown === "function" && $("town")) renderTown();
 }
 
 function numHtml(n) {
@@ -566,6 +653,7 @@ $("choices").addEventListener("click", e => {
   if (n === cur.ans) {
     locked = true;
     btn.classList.add("ok"); sfx.ok();
+    ev(cur.missed ? "okMiss" : "ok", { mode: cur.mode });
     $("hint").textContent = cur.missed
       ? `せいかい! ${byN(n).k} は「${byN(n).r}」。でも ずかんには まだ。おぼえなおして また チャレンジ!`
       : `せいかい! ${byN(n).k} は「${byN(n).r}」`;
@@ -584,6 +672,7 @@ $("choices").addEventListener("click", e => {
     setTimeout(startTrace, 1300);
   } else {
     btn.classList.add("ng"); btn.disabled = true; sfx.ng();
+    if (!cur.missed) ev("ng");
     cur.missed = true;               // まちがえても ほかの こたえを えらんで すすめる。でも ずかんには のらない
     state.miss[cur.ans] = (state.miss[cur.ans] || 0) + 1; save();
     $("hint").textContent = "おしい! ほかの こたえを えらんでみよう(この もんだいは あとで もういちど でるよ)";
@@ -738,7 +827,7 @@ function acceptStroke(auto, userPts) {
       sfx.done();
       const all = tr.qTotal > 0 && tr.qOk === tr.qTotal;
       say(`かんせい! 「${tr.k}」が かけたね 🎉` + (tr.qTotal ? `  ていねい ✨${tr.qOk}/${tr.qTotal}` : ""));
-      if (all) { state.stars += 1; cheer("🌟"); setTimeout(sfx.sparkle, 450); }
+      if (all) { addStars(1); cheer("🌟"); setTimeout(sfx.sparkle, 450); }
     }
     speak(byN(cur.ans).r);
     setTimeout(finishTrace, 1300);
@@ -835,15 +924,17 @@ function finishTrace() {
     state.review[n] = { at: state.qn + Math.min(3 + 2 * (fails - 1), 9), fails };
     save(); renderZukan();
     cheer("🔁");
+    ev("write");
     setTimeout(newQuestion, 900);
     return;
   }
   const before = stageIdx(Object.keys(state.got).length);
+  const isNew = !state.got[n];
   state.got[n] = (state.got[n] || 0) + 1;
   const evolved = stageIdx(Object.keys(state.got).length) > before;
-  state.stars += 1;
+  addStars(1);
   const revenge = !!state.review[n];
-  if (revenge) { delete state.review[n]; state.stars += 1; }   // おぼえなおして せいかい: ボーナス
+  if (revenge) { delete state.review[n]; addStars(1); }   // おぼえなおして せいかい: ボーナス
   if (state.miss[n]) state.miss[n] = Math.max(0, state.miss[n] - 1);
   save(); renderZukan();
   cheer(Object.keys(state.got).length === TOTAL && state.got[n] === 1 ? "🏆 ぜんぶ そろった!"
@@ -851,6 +942,7 @@ function finishTrace() {
     : revenge ? "🔁⭐ リベンジ せいこう!" : "⭐");
   if (revenge) setTimeout(sfx.sparkle, 300);
   if (evolved) { speak("しんか!"); sfx.evolve(); }
+  ev("write", { isNew, revenge });
   setTimeout(newQuestion, 900);
 }
 
@@ -876,13 +968,295 @@ $("resetBtn").addEventListener("click", () => {
     return;
   }
   clearTimeout(resetArmed); resetArmed = null; b.textContent = "きろくを ぜんぶ けす";
-  state.stars = 0; state.got = {}; state.miss = {}; state.review = {}; state.qn = 0; save(); renderZukan(); newQuestion();
+  state.stars = 0; state.got = {}; state.miss = {}; state.review = {}; state.qn = 0;
+  state.streak = { last: "", n: 0 }; state.daily = { date: "", ids: [], prog: {}, done: {} };
+  state.stat = { ok: 0, ng: 0, writes: 0, revenge: 0, earned: 0, bestCombo: 0, missions: 0, modes: {} };
+  state.badges = {}; state.owned = {}; state.equip = {}; combo = 0;
+  state.town = { b: {}, order: [], collect: "" }; state.crewSeen = undefined; townSel = null; townSig = "";
+  save(); renderZukan(); renderGame(); newQuestion();
 });
 applySettings();
 
+// ---- ゲーム要素(コンボ・れんぞく・ミッション・バッジ・おみせ) ----
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const dayDiff = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+function seeded(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } h = h || 1;
+  return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }
+const MISSIONS = [
+  { id: "ok", goal: 8, text: "1かいで せいかい 8もん" },
+  { id: "modes", goal: 3, text: "3つの あそびかたを あそぶ" },
+  { id: "write", goal: 5, text: "かきとり 5じ" },
+  { id: "combo", goal: 5, text: "コンボ 5" },
+  { id: "new", goal: 2, text: "あたらしい かんじを 2じ ゲット" },
+];
+const BADGES = [
+  { id: "first", e: "🌱", n: "はじめの いっぽ", t: () => Object.keys(state.got).length >= 1 },
+  { id: "g10", e: "🥉", n: "10じ ゲット", t: () => Object.keys(state.got).length >= 10 },
+  { id: "g30", e: "🥈", n: "30じ ゲット", t: () => Object.keys(state.got).length >= 30 },
+  { id: "g50", e: "🥇", n: "50じ ゲット", t: () => Object.keys(state.got).length >= 50 },
+  { id: "g80", e: "🏆", n: "80じ ぜんぶ!", t: () => Object.keys(state.got).length >= TOTAL },
+  { id: "c5", e: "🔥", n: "コンボ 5", t: () => state.stat.bestCombo >= 5 },
+  { id: "c10", e: "🔥🔥", n: "コンボ 10", t: () => state.stat.bestCombo >= 10 },
+  { id: "c20", e: "🌋", n: "コンボ 20", t: () => state.stat.bestCombo >= 20 },
+  { id: "s3", e: "📅", n: "3にち れんぞく", t: () => state.streak.n >= 3 },
+  { id: "s7", e: "📆", n: "7にち れんぞく", t: () => state.streak.n >= 7 },
+  { id: "r1", e: "🔁", n: "はじめての リベンジ", t: () => state.stat.revenge >= 1 },
+  { id: "r10", e: "💪", n: "リベンジ 10かい", t: () => state.stat.revenge >= 10 },
+  { id: "w50", e: "✍️", n: "かきとり 50じ", t: () => state.stat.writes >= 50 },
+  { id: "modes", e: "🎓", n: "5つの あそびを ぜんぶ", t: () => Object.keys(state.stat.modes).length >= 5 },
+  { id: "m10", e: "📜", n: "ミッション 10かい", t: () => state.stat.missions >= 10 },
+  { id: "b1", e: "🏗️", n: "はじめての たてもの", t: () => tBuilt().length >= 1 },
+  { id: "b5", e: "🏘️", n: "たてもの 5こ", t: () => tBuilt().length >= 5 },
+  { id: "bmax", e: "🌟", n: "たてものを さいだいに", t: () => tBuilt().some(id => state.town.b[id] >= tDef(id).lv) },
+  { id: "crew5", e: "🤝", n: "なかま 5にん", t: () => CREW.filter(m => gotCount() >= m.at).length >= 5 },
+  { id: "st50", e: "💎", n: "⭐ 50こ", t: () => state.stat.earned >= 50 },
+];
+const SHOP = [
+  { id: "ribbon", e: "🎀", n: "リボン", p: 6, slot: "head" }, { id: "hat", e: "🎩", n: "シルクハット", p: 8, slot: "head" },
+  { id: "crown", e: "👑", n: "おうかん", p: 25, slot: "head" }, { id: "glass", e: "🕶️", n: "サングラス", p: 10, slot: "face" },
+  { id: "scarf", e: "🧣", n: "マフラー", p: 12, slot: "neck" }, { id: "flower", e: "🌸", n: "おはな", p: 8, slot: "side" },
+  { id: "ball", e: "⚽", n: "サッカーボール", p: 10, slot: "side" }, { id: "wand", e: "🪄", n: "まほうの つえ", p: 30, slot: "side" },
+];
+function petHTML(e) {
+  const acc = Object.entries(state.equip).map(([slot, id]) => { const it = SHOP.find(x => x.id === id); return it ? `<span class="acc ${slot}">${it.e}</span>` : ""; }).join("");
+  return `<span class="petwrap">${e}${acc}</span>`;
+}
+const toastQ = []; let toasting = false;
+function toast(t) { toastQ.push(t); if (!toasting) nextToast(); }
+function nextToast() {
+  const t = toastQ.shift();
+  if (!t) { toasting = false; $("toast").classList.add("hidden"); return; }
+  toasting = true; $("toast").textContent = t; $("toast").classList.remove("hidden");
+  setTimeout(nextToast, 2300);
+}
+function addStars(n) { state.stars += n; state.stat.earned += n; }
+function ensureDaily() {
+  const t = todayStr();
+  if (state.daily.date === t) return;
+  const rnd = seeded(t), pool = MISSIONS.map(m => m.id).sort(() => rnd() - 0.5);
+  state.daily = { date: t, ids: pool.slice(0, 3), prog: { ok: 0, modes: {}, write: 0, combo: 0, new: 0 }, done: {} };
+}
+function progOf(id) { const P = state.daily.prog; return id === "modes" ? Object.keys(P.modes || {}).length : (P[id] || 0); }
+function touchDay() {
+  const t = todayStr();
+  if (state.streak.last !== t) {
+    state.streak.n = state.streak.last && dayDiff(state.streak.last, t) === 1 ? state.streak.n + 1 : 1;
+    state.streak.last = t;
+    const bonus = { 3: 2, 7: 4, 14: 6, 30: 10 }[state.streak.n];
+    if (state.streak.n > 1) toast(`📅 ${state.streak.n}にち れんぞく!` + (bonus ? ` ⭐+${bonus}` : ""));
+    if (bonus) { addStars(bonus); sfx.coin(); }
+  }
+  ensureDaily();
+}
+function checkMissions() {
+  const D = state.daily;
+  for (const id of D.ids) {
+    const m = MISSIONS.find(x => x.id === id);
+    if (!D.done[id] && progOf(id) >= m.goal) {
+      D.done[id] = 1; state.stat.missions++; addStars(2); sfx.mission(); toast(`✅ ミッション たっせい! ⭐+2`);
+      if (D.ids.every(i => D.done[i])) { addStars(3); toast("🎁 きょうの ミッション ぜんぶ! ⭐+3"); }
+    }
+  }
+}
+function checkBadges() {
+  for (let pass = 0; pass < 3; pass++) {
+    let got = false;
+    for (const b of BADGES) if (!state.badges[b.id] && b.t()) {
+      state.badges[b.id] = todayStr(); addStars(2); got = true; sfx.badge(); toast(`🏅 バッジ ゲット! ${b.e} ${b.n} ⭐+2`);
+    }
+    if (!got) break;
+  }
+}
+function ev(type, d) {              // ゲームの できごと(せいかい・まちがい・かきとり)
+  d = d || {};
+  touchDay();
+  const P = state.daily.prog, S = state.stat;
+  if (type === "ok" || type === "okMiss") { S.modes[d.mode] = 1; P.modes[d.mode] = 1; }
+  if (type === "ok") {
+    S.ok++; P.ok++; combo++;
+    S.bestCombo = Math.max(S.bestCombo, combo); P.combo = Math.max(P.combo, combo);
+    if (combo >= 3) sfx.combo(combo);
+    if (combo % 5 === 0) { addStars(1); toast(`🔥 ${combo}コンボ! ⭐+1`); }
+  }
+  if (type === "ng") { S.ng++; combo = 0; }
+  if (type === "write") {
+    S.writes++; P.write++;
+    if (d.isNew) P.new++;
+    if (d.revenge) S.revenge++;
+  }
+  checkMissions(); checkBadges(); checkCrew(); save(); renderGame(); renderZukan();
+}
+function renderGame() {
+  ensureDaily();
+  $("gameStrip").innerHTML = `<span>📅 れんぞく <b>${state.streak.n}</b>にち</span>` + (combo >= 2 ? `<span>🔥 コンボ <b>${combo}</b></span>` : "");
+  $("daily").innerHTML = `<h3>🎯 きょうの ミッション</h3>` + state.daily.ids.map(id => {
+    const m = MISSIONS.find(x => x.id === id), v = Math.min(progOf(id), m.goal), dn = state.daily.done[id];
+    return `<div class="ms ${dn ? "done" : ""}"><span>${dn ? "✅" : "⬜"}</span><span style="flex:2">${m.text}</span><span class="bar2"><i style="width:${v / m.goal * 100}%"></i></span><span>${v}/${m.goal}</span></div>`;
+  }).join("");
+  renderRewards();
+  renderTown();
+}
+let rtab = "badge";
+function renderRewards() {
+  $("rtBadge").classList.toggle("on", rtab === "badge"); $("rtShop").classList.toggle("on", rtab === "shop");
+  if (rtab === "badge") {
+    $("rBody").innerHTML = `<div id="bgrid">` + BADGES.map(b => {
+      const g = state.badges[b.id];
+      return `<div class="bd ${g ? "" : "lock"}"><span class="be">${b.e}</span>${g ? b.n : "???"}</div>`;
+    }).join("") + `</div><div style="text-align:center;font-size:.85rem;margin-top:6px">${Object.keys(state.badges).length}/${BADGES.length}こ</div>`;
+  } else {
+    $("rBody").innerHTML = `<div style="font-size:.9rem;margin-bottom:4px">⭐ <b>${state.stars}</b> こ もってるよ。ペットに つけて おしゃれしよう</div>` + SHOP.map(it => {
+      const own = state.owned[it.id], on = state.equip[it.slot] === it.id;
+      const btn = own ? `<button class="${on ? "on" : ""}" data-act="equip" data-id="${it.id}">${on ? "つけてる" : "つける"}</button>`
+        : `<button class="${state.stars >= it.p ? "" : "off"}" data-act="buy" data-id="${it.id}">⭐${it.p} で かう</button>`;
+      return `<div class="item"><span class="ie">${it.e}</span><span class="in">${it.n}</span>${btn}</div>`;
+    }).join("");
+  }
+}
+$("rtBadge").addEventListener("click", () => { sfx.tap(); rtab = "badge"; renderRewards(); });
+$("rtShop").addEventListener("click", () => { sfx.tap(); rtab = "shop"; renderRewards(); });
+$("rBody").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const it = SHOP.find(x => x.id === b.dataset.id); if (!it) return;
+  if (b.dataset.act === "buy") {
+    if (state.owned[it.id]) return;
+    if (state.stars < it.p) { sfx.ng(); toast(`⭐が たりないよ(あと ${it.p - state.stars}こ)`); return; }
+    state.stars -= it.p; state.owned[it.id] = 1; state.equip[it.slot] = it.id; sfx.coin(); toast(`${it.e} ${it.n} を てにいれた!`);
+  } else {
+    if (state.equip[it.slot] === it.id) delete state.equip[it.slot]; else state.equip[it.slot] = it.id;
+    sfx.tap();
+  }
+  save(); renderZukan(); renderRewards();
+});
+
+// ---- かんじの まち ----
+const TOWN = [
+  { id: "tree", name: "もり", k: ["木", "林", "森"], lv: 4, cost: [5, 8, 12, 18] },
+  { id: "field", name: "はたけ", k: ["田"], lv: 3, cost: [5, 10, 18] },
+  { id: "ranch", name: "ぼくじょう", k: ["生"], lv: 3, cost: [5, 10, 18] },
+  { id: "houses", name: "むら", k: ["村"], lv: 3, cost: [5, 10, 18] },
+  { id: "harbor", name: "みなと", k: ["町"], lv: 3, cost: [6, 11, 20] },
+  { id: "mill", name: "ふうしゃ", k: ["早"], lv: 2, cost: [6, 14] },
+  { id: "onsen", name: "おんせん", k: ["水"], lv: 3, cost: [5, 10, 18] },
+  { id: "fountain", name: "ふんすい", k: ["川"], lv: 4, cost: [5, 8, 12, 18] },
+  { id: "rainbow", name: "にじ", k: ["雨"], lv: 3, cost: [5, 10, 18] },
+  { id: "monument", name: "せきひ", k: ["石"], lv: 3, cost: [5, 10, 18] },
+  { id: "shrine", name: "じんじゃ", k: ["正"], lv: 4, cost: [5, 8, 12, 18] },
+  { id: "flowers", name: "はなばたけ", k: ["花", "草"], lv: 3, cost: [4, 8, 14] },
+  { id: "tower", name: "ほしの とう", k: ["天"], lv: 3, cost: [6, 12, 20] },
+  { id: "lighthouse", name: "とうだい", k: ["空"], lv: 3, cost: [6, 12, 20] },
+  { id: "scope", name: "てんもんだい", k: ["目", "見"], lv: 3, cost: [6, 12, 20] },
+  { id: "castle", name: "おしろ", k: ["王"], lv: 3, cost: [8, 14, 24] },
+  { id: "school", name: "がっこう", k: ["校", "学"], lv: 2, cost: [6, 14] },
+  { id: "library", name: "としょかん", k: ["本", "文"], lv: 3, cost: [6, 12, 20] },
+  { id: "park", name: "ゆうえんち", k: ["車"], lv: 3, cost: [8, 14, 24] },
+  { id: "stall", name: "やたい", k: ["円", "百", "千"], lv: 3, cost: [4, 8, 14] },
+  { id: "camp", name: "キャンプ", k: ["休"], lv: 2, cost: [4, 10] },
+  { id: "treasure", name: "たからばこ", k: ["金"], lv: 3, cost: [5, 10, 18] },
+  { id: "gems", name: "ほうせき", k: ["玉"], lv: 3, cost: [5, 10, 18] },
+  { id: "lantern", name: "ちょうちん", k: ["夕"], lv: 3, cost: [4, 8, 14] },
+];
+const CREW = [
+  { id: "ghost", name: "ふーちゃん", at: 3, say: "おばけの ふーちゃんだよ。こわくないよ、いっしょに かんじを おぼえよう!" },
+  { id: "cat", name: "みけ", at: 8, say: "みけだよ。まちを まもる ねこの ぼうけんしゃ。にゃん!" },
+  { id: "fox", name: "こんた", at: 15, say: "こんただよ。ランタンで まちを てらすよ。" },
+  { id: "robot", name: "ロボくん", at: 25, say: "ロボくんです。かんじを いっぱい インプットしたよ。ピピッ!" },
+  { id: "ninja", name: "しのぶ", at: 35, say: "しのぶだよ。すばやく かけるよ。かきじゅんも すばやく おぼえよう!" },
+  { id: "ranger", name: "レンジャー", at: 45, say: "はたを もって あんない するよ。まちが おおきく なってきたね!" },
+  { id: "witch", name: "まほうつかい", at: 55, say: "まほうの つえで、かんじを ひからせちゃうよ。" },
+  { id: "knight", name: "ナイト", at: 65, say: "ナイトだ! わすれそうな かんじは ぼくが まもる!" },
+  { id: "prince", name: "おうじさま", at: 80, say: "ぜんぶ おぼえたね。きみは かんじの おうさまだ!" },
+];
+const kn = c => (ALL.find(d => d.k === c) || {}).n;
+const tDef = id => TOWN.find(b => b.id === id);
+const tImg = (id, lv) => `img/${id}${lv}.webp`;
+const gotCount = () => Object.keys(state.got).length;
+const tUnlocked = b => b.k.some(c => state.got[kn(c)]);
+const tCap = () => 4 + Math.floor(gotCount() / 5);
+const tBuilt = () => state.town.order.filter(id => state.town.b[id]);
+const tTotalLv = () => tBuilt().reduce((t, id) => t + state.town.b[id], 0);
+const tIncome = () => Math.min(1 + Math.floor(tTotalLv() / 3), 8);
+const tNextCost = id => { const b = tDef(id), lv = state.town.b[id] || 0; return lv >= b.lv ? null : b.cost[lv]; };
+let townSel = null, townFlash = null, townSig = "";
+const coinImg = `<img src="img/i_coin.webp" alt="⭐" width="20" height="20">`;
+
+function checkCrew() {
+  const c = gotCount();
+  if (!state.crewSeen) { state.crewSeen = {}; for (const m of CREW) if (c >= m.at) state.crewSeen[m.id] = 1; return; }   // 前から あそんでいる ばあいは しずかに
+  for (const m of CREW) if (c >= m.at && !state.crewSeen[m.id]) {
+    state.crewSeen[m.id] = 1; sfx.badge(); toast(`🤝 なかまが ふえたよ! ${m.name}`);
+  }
+}
+function renderTown() {
+  const T = state.town, built = tBuilt(), cap = tCap(), today = todayStr();
+  const canCollect = built.length > 0 && T.collect !== today;
+  const afford = (id => { const c = tNextCost(id); return c !== null && state.stars >= c; });
+  const nUp = built.filter(afford).length;
+  const nNew = TOWN.filter(b => !T.b[b.id] && tUnlocked(b) && state.stars >= b.cost[0]).length;
+  const sig = JSON.stringify([T.b, T.order, T.collect === today, townSel, townFlash, cap, nUp, nNew > 0 && built.length < cap, gotCount(), TOWN.map(b => +tUnlocked(b)).join("")]);
+  if (sig === townSig) return; townSig = sig;
+  const crew = `<div class="crew">` + CREW.map(m => gotCount() >= m.at
+    ? `<button data-act="crew" data-id="${m.id}" aria-label="${m.name}"><img src="img/c_${m.id}.webp" alt="${m.name}" width="44" height="44"></button>`
+    : `<button class="lock" disabled title="あと ${m.at - gotCount()}じ">?</button>`).join("") + `</div>`;
+  const head = `<div class="thead"><div><h3>🏘️ かんじの まち${(nUp || (nNew && built.length < cap)) ? '<span class="newdot">NEW</span>' : ""}</h3>
+      <div class="tsub">たてもの ${built.length}/${cap}(かんじが ふえると ひろがるよ)</div></div>
+      <button class="tchest ${canCollect ? "ready" : "done"}" data-act="collect"><img src="img/i_chest.webp" alt="" width="34" height="34">${built.length ? (canCollect ? `ごほうび ${coinImg}${tIncome()}` : "また あした!") : "まず たてよう"}</button></div>`;
+  let grid = built.map(id => {
+    const b = tDef(id), lv = T.b[id];
+    return `<button class="tcell ${townSel === id ? "sel" : ""} ${townFlash === id ? "pop" : ""}" data-act="sel" data-id="${id}"><img src="${tImg(id, lv)}" alt="${b.name}" width="86" height="86" loading="lazy" decoding="async"><div>${b.name}</div><div class="tlv">Lv.${lv}${lv >= b.lv ? " ★" : ""}</div></button>`;
+  }).join("");
+  if (built.length < cap) grid += `<button class="tcell add ${townSel === "build" ? "sel" : ""}" data-act="build"><span class="plus">＋</span><span>たてる</span></button>`;
+  let panel = "";
+  if (townSel === "build") {
+    const rows = TOWN.filter(b => !T.b[b.id]).map(b => ({ b, ok: tUnlocked(b) })).sort((x, y) => y.ok - x.ok);
+    panel = `<div class="tpanel"><b>なにを たてる?</b><div class="blist">` + rows.map(({ b, ok }) => {
+      const can = ok && state.stars >= b.cost[0];
+      return ok
+        ? `<div class="bi"><img src="${tImg(b.id, 1)}" alt="" width="52" height="52" loading="lazy"><div class="tx"><b>${b.name}</b><br>${b.k.map(c => `<span class="tchip">${c}</span>`).join("")}</div><button class="tbtn ${can ? "" : "off"}" data-act="make" data-id="${b.id}">${coinImg}${b.cost[0]} で たてる</button></div>`
+        : `<div class="bi lock"><img src="${tImg(b.id, 1)}" alt="" width="52" height="52" loading="lazy"><div class="tx"><b>？？？</b><br>🔒 ${b.k.map(c => `「${c}」`).join("か")}を ゲットすると ひらくよ</div></div>`;
+    }).join("") + `</div></div>`;
+  } else if (townSel && T.b[townSel]) {
+    const b = tDef(townSel), lv = T.b[townSel], c = tNextCost(townSel);
+    panel = `<div class="tpanel"><div class="big"><img src="${tImg(townSel, lv)}" alt="${b.name}"><div class="info"><div class="nm">${b.name}</div>
+      <div class="tlv">Lv.${lv} / ${b.lv}</div><div class="tsub">ひらいた かんじ: ${b.k.filter(k => state.got[kn(k)]).map(k => `<span class="tchip">${k}</span>`).join("")}</div>`
+      + (c === null ? `<div style="margin-top:6px">🌟 さいだいレベル!</div>`
+        : `<button class="tbtn ${state.stars >= c ? "" : "off"}" data-act="up" data-id="${townSel}">${coinImg}${c} で レベルアップ</button>`) + `</div></div></div>`;
+  } else if (!built.length) {
+    panel = `<div class="tpanel" style="text-align:center">まだ なにも ないよ。「＋ たてる」から はじめよう!</div>`;
+  }
+  $("town").innerHTML = head + crew + `<div class="tgrid">${grid}</div>` + panel;
+  townFlash = null;
+}
+$("town").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id, T = state.town;
+  if (act === "sel") { sfx.tap(); townSel = townSel === id ? null : id; }
+  else if (act === "build") { sfx.tap(); townSel = townSel === "build" ? null : "build"; }
+  else if (act === "crew") {
+    const m = CREW.find(x => x.id === id); b.classList.remove("hop"); void b.offsetWidth; b.classList.add("hop"); sfx.tap(); speak(m.say); toast(`${m.name}: ${m.say}`); return;
+  } else if (act === "collect") {
+    if (!tBuilt().length) { townSel = "build"; }
+    else if (T.collect === todayStr()) { toast("きょうの ごほうびは もう もらったよ。また あした!"); return; }
+    else { const n = tIncome(); T.collect = todayStr(); addStars(n); sfx.coin(); toast(`🎁 まちの ごほうび ⭐+${n}`); save(); renderZukan(); }
+  } else if (act === "make") {
+    const d = tDef(id);
+    if (tBuilt().length >= tCap()) { sfx.ng(); toast("もう いっぱい。かんじを ふやすと ひろがるよ"); return; }
+    if (state.stars < d.cost[0]) { sfx.ng(); toast(`⭐が たりないよ(あと ${d.cost[0] - state.stars}こ)`); return; }
+    state.stars -= d.cost[0]; T.b[id] = 1; if (!T.order.includes(id)) T.order.push(id);
+    townSel = id; townFlash = id; sfx.badge(); toast(`🏗️ ${d.name} が できたよ!`); checkBadges(); save(); renderZukan();
+  } else if (act === "up") {
+    const d = tDef(id), c = tNextCost(id);
+    if (c === null) return;
+    if (state.stars < c) { sfx.ng(); toast(`⭐が たりないよ(あと ${c - state.stars}こ)`); return; }
+    state.stars -= c; T.b[id]++; townFlash = id; sfx.badge(); toast(`⬆️ ${d.name} が Lv.${T.b[id]} に なったよ!`); checkBadges(); save(); renderZukan();
+  }
+  townSig = ""; renderTown(); renderGame();
+});
+
 // ---- きろくの コード(コピーして とっておく / あとで もどす) ----
 function makeCode() {
-  const o = { v: 1, stars: state.stars, got: state.got, miss: state.miss, review: state.review, qn: state.qn };
+  const o = { v: 1, stars: state.stars, got: state.got, miss: state.miss, review: state.review, qn: state.qn,
+    owned: state.owned, equip: state.equip, badges: state.badges, town: { b: state.town.b, order: state.town.order }, stat: { earned: state.stat.earned, bestCombo: state.stat.bestCombo, writes: state.stat.writes, revenge: state.stat.revenge, missions: state.stat.missions } };
   return "KJ1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 }
 function mergeCode(code) {          // いまの きろくに あわせる(あたらしいほうを のこす)。できなければ false
@@ -897,9 +1271,22 @@ function mergeCode(code) {          // いまの きろくに あわせる(あ�
     const n = +k, v = o.review[k];
     if (n >= 1 && n <= TOTAL && v && !state.review[n]) state.review[n] = { at: num(v.at, 1e9), fails: num(v.fails, 99) || 1 };
   }
+  for (const it of SHOP) {
+    if (o.owned && o.owned[it.id]) state.owned[it.id] = 1;
+    if (o.equip && o.equip[it.slot] === it.id && !state.equip[it.slot]) state.equip[it.slot] = it.id;
+  }
+  for (const b of BADGES) if (o.badges && o.badges[b.id] && !state.badges[b.id]) state.badges[b.id] = String(o.badges[b.id]).slice(0, 10);
+  for (const k of ["earned", "bestCombo", "writes", "revenge", "missions"]) state.stat[k] = Math.max(state.stat[k] || 0, num(o.stat && o.stat[k], 1e6));
+  if (o.town && o.town.b && typeof o.town.b === "object") {
+    for (const b of TOWN) {
+      const v = Math.min(num(o.town.b[b.id], b.lv), b.lv);
+      if (v > 0) { state.town.b[b.id] = Math.max(state.town.b[b.id] || 0, v); if (!state.town.order.includes(b.id)) state.town.order.push(b.id); }
+    }
+    townSig = "";
+  }
   state.stars = Math.max(state.stars, num(o.stars, 1e6));
   state.qn = Math.max(state.qn, num(o.qn, 1e9));
-  save(); renderZukan(); applySettings();
+  save(); renderZukan(); renderGame(); applySettings();
   return true;
 }
 $("codeMake").addEventListener("click", () => { $("codeOut").value = makeCode(); $("codeOut").classList.remove("hidden"); $("codeCopy").classList.remove("hidden"); $("codeMsg").textContent = "コードが できたよ。コピーして メモや メッセージに とっておいてね"; });
@@ -941,6 +1328,7 @@ $("tabSent").addEventListener("click", () => setMode("sent"));
 $("tabMix").addEventListener("click", () => setMode("mix"));
 
 renderZukan();
+renderGame();
 newQuestion();
 </script>
 </body>
