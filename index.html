@@ -112,10 +112,22 @@
     <label class="opt"><input type="checkbox" id="optAuto"> おてほんを じどうで みせる</label>
     <label class="opt"><input type="checkbox" id="optQ"> はね・はらい・とめ を みる(ほめるだけ・たまに ヒント)</label>
     <label class="opt"><input type="checkbox" id="optDbg"> はんてい ログを だす(ちょうせい用)</label>
+    <div class="opt"><b>きろくの バックアップ</b><br>
+      <span id="saveStatus" style="font-size:.85rem;color:#8d6e63"></span>
+      <div class="row" style="margin-top:6px">
+        <button class="big-btn sub" id="codeMake" style="font-size:1rem;padding:10px">コードを つくる</button>
+        <button class="big-btn sub hidden" id="codeCopy" style="font-size:1rem;padding:10px">コピー</button>
+      </div>
+      <textarea id="codeOut" class="hidden" readonly rows="3" style="width:100%;margin-top:6px;font:11px monospace;-webkit-user-select:text;user-select:text"></textarea>
+      <textarea id="codeIn" rows="2" placeholder="とっておいた コードを ここに はる" style="width:100%;margin-top:6px;font:11px monospace;-webkit-user-select:text;user-select:text"></textarea>
+      <button class="big-btn sub" id="codeApply" style="font-size:1rem;padding:10px;margin-top:6px">このコードで もどす(いまの きろくに あわせる)</button>
+      <div id="codeMsg" style="font-size:.9rem;margin-top:4px"></div>
+    </div>
     <button class="big-btn sub" id="resetBtn" style="font-size:1rem;padding:10px">きろくを ぜんぶ けす</button>
   </section>
   <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">80</span></span></div>
   <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
+  <div id="storageWarn" class="hidden" style="background:#ffebee;color:#c62828;border-radius:12px;padding:8px 12px;font-size:.9rem">⚠️ この がめんでは あそんだ きろくが のこりません。ふつうの ブラウザで ひらいてね(おうちのひとへ: ⚙️ の コードで きろくを とっておけます)</div>
   <div id="rvLine" class="hidden"></div>
   <div class="tabs">
     <button id="tabCalc" class="tab">🔢 けいさん</button>
@@ -331,12 +343,32 @@ const partner = n => (n % 2 === 1 ? n + 1 : n - 1);
 function load() {
   try { return JSON.parse(localStorage.getItem("kanjiTashizan") || "null") || {}; } catch (e) { return {}; }
 }
-function save() {
-  try { localStorage.setItem("kanjiTashizan", JSON.stringify(state)); } catch (e) {}
+// きろくが ほんとうに のこる 画面か しらべる(プライベート画面などでは のこらない)
+let storageOK = true;
+try { localStorage.setItem("kt_probe", "1"); storageOK = localStorage.getItem("kt_probe") === "1"; localStorage.removeItem("kt_probe"); } catch (e) { storageOK = false; }
+// IndexedDB にも ひかえを とる(localStorage だけ きえた とき ふっかつ できる)
+function idb() {
+  return new Promise((res, rej) => {
+    try { const r = indexedDB.open("kanjiTashizan", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+    catch (e) { rej(e); }
+  });
 }
+async function idbPut(v) { try { const db = await idb(); db.transaction("kv", "readwrite").objectStore("kv").put(v, "state"); } catch (e) {} }
+async function idbGet() {
+  try { const db = await idb(); return await new Promise(res => { const q = db.transaction("kv").objectStore("kv").get("state"); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+  catch (e) { return null; }
+}
+function save() {
+  state.savedAt = Date.now();
+  const j = JSON.stringify(state);
+  try { localStorage.setItem("kanjiTashizan", j); } catch (e) {}
+  idbPut(j);
+}
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}   // けされにくく おねがい
 const state = Object.assign({ stars: 0, got: {}, miss: {}, mode: "calc", review: {}, qn: 0 }, load());
 // おうちのひと用の せってい(0:やさしい 1:ふつう 2:きびしい)
 state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, state.set || {});
+const hadSaved = !!(state.got && Object.keys(state.got).length) || state.stars > 0 || state.qn > 0;
 const TOL = [1.35, 1, 0.75];       // やさしい ほど 許す はんいが ひろい
 
 // ---- 音 ----
@@ -837,6 +869,58 @@ $("resetBtn").addEventListener("click", () => {
   state.stars = 0; state.got = {}; state.miss = {}; state.review = {}; state.qn = 0; save(); renderZukan(); newQuestion();
 });
 applySettings();
+
+// ---- きろくの コード(コピーして とっておく / あとで もどす) ----
+function makeCode() {
+  const o = { v: 1, stars: state.stars, got: state.got, miss: state.miss, review: state.review, qn: state.qn };
+  return "KJ1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+}
+function mergeCode(code) {          // いまの きろくに あわせる(あたらしいほうを のこす)。できなければ false
+  const m = String(code).match(/KJ1:([A-Za-z0-9+/=]+)/);
+  if (!m) return false;
+  let o; try { o = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (e) { return false; }
+  if (!o || typeof o !== "object" || typeof o.got !== "object") return false;
+  const num = (x, hi) => (Number.isFinite(+x) ? Math.max(0, Math.min(hi, Math.floor(+x))) : 0);
+  for (const k in o.got) { const n = +k, v = num(o.got[k], 9999); if (n >= 1 && n <= TOTAL && v > 0) state.got[n] = Math.max(state.got[n] || 0, v); }
+  for (const k in (o.miss || {})) { const n = +k; if (n >= 1 && n <= TOTAL) state.miss[n] = Math.max(state.miss[n] || 0, num(o.miss[k], 99)); }
+  for (const k in (o.review || {})) {
+    const n = +k, v = o.review[k];
+    if (n >= 1 && n <= TOTAL && v && !state.review[n]) state.review[n] = { at: num(v.at, 1e9), fails: num(v.fails, 99) || 1 };
+  }
+  state.stars = Math.max(state.stars, num(o.stars, 1e6));
+  state.qn = Math.max(state.qn, num(o.qn, 1e9));
+  save(); renderZukan(); applySettings();
+  return true;
+}
+$("codeMake").addEventListener("click", () => { $("codeOut").value = makeCode(); $("codeOut").classList.remove("hidden"); $("codeCopy").classList.remove("hidden"); $("codeMsg").textContent = "コードが できたよ。コピーして メモや メッセージに とっておいてね"; });
+$("codeCopy").addEventListener("click", async () => {
+  const t = $("codeOut"); t.select();
+  try { await navigator.clipboard.writeText(t.value); $("codeMsg").textContent = "コピーしたよ!"; }
+  catch (e) { $("codeMsg").textContent = "コードを ながおしで えらんで コピーしてね"; }
+});
+$("codeApply").addEventListener("click", () => {
+  const ok = mergeCode($("codeIn").value);
+  $("codeMsg").textContent = ok ? `もどしたよ! ずかん ${Object.keys(state.got).length}字` : "コードが ただしくないよ。さいしょの「KJ1:」から ぜんぶ はりつけてね";
+  if (ok) { $("codeIn").value = ""; newQuestion(); }
+});
+function showStatus() {
+  const t = state.savedAt ? new Date(state.savedAt).toLocaleString("ja-JP") : "まだ";
+  $("saveStatus").textContent = storageOK ? `ほぞん: OK(さいごの ほぞん ${t})` : "ほぞん: できません(この がめんでは きろくが のこりません)";
+  $("storageWarn").classList.toggle("hidden", storageOK);
+}
+$("gear").addEventListener("click", showStatus);
+// localStorage が からっぽで IndexedDB に ひかえが あれば ふっかつ
+if (!hadSaved) idbGet().then(v => {
+  if (!v) return;
+  try {
+    const o = JSON.parse(v);
+    if (!o || !o.got || !Object.keys(o.got).length) return;
+    Object.assign(state, o);
+    state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, o.set || {});
+    save(); renderZukan(); applySettings(); newQuestion();
+  } catch (e) {}
+});
+showStatus();
 
 function setMode(m) { sfx.tap(); state.mode = m; save(); renderZukan(); newQuestion(); }
 $("tabCalc").addEventListener("click", () => setMode("calc"));
