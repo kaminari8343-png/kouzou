@@ -159,6 +159,52 @@
   .blist .bi .tx { flex: 1; min-width: 0; font-size: .92rem; }
   .blist .bi.lock .tx { color: #9e9e9e; }
   .newdot { display: inline-block; background: #e53935; color: #fff; border-radius: 10px; font-size: .7rem; padding: 0 6px; margin-left: 4px; vertical-align: middle; }
+  body { padding-bottom: 0; }
+  #app { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+  .screen { display: none; flex-direction: column; gap: 12px; }
+  .screen.on { display: flex; }
+  #top { display: flex; align-items: center; gap: 8px; }
+  #top .ttl { flex: 1; font-size: 1.15rem; }
+  #top .coins { display: flex; align-items: center; gap: 4px; background: #fff3c4; border-radius: 14px; padding: 2px 10px; font-size: 1.05rem; }
+  #top .coins img { width: 22px; height: 22px; }
+  .ibtn { font-size: 1.3rem; border: 0; background: none; cursor: pointer; padding: 4px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 1.05rem; }
+  .hero { text-align: center; padding: 12px; }
+  .hero .pet .e { font-size: 3.2rem; }
+  .cta { font-size: 1.5rem; padding: 18px 20px; }
+  .quick { font-size: 1.05rem; padding: 12px 16px; }
+  .homeTown { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; font: inherit; color: var(--ink); text-align: left; cursor: pointer; padding: 10px 14px; }
+  .homeTown img { width: 52px; height: 52px; object-fit: contain; flex: none; }
+  .homeTown .tx { flex: 1; min-width: 0; }
+  .homeTown .tx small { color: #8d6e63; display: block; }
+  .sh { margin: 4px 0 0; font-size: 1.1rem; }
+  #modeGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mcard { font: inherit; color: var(--ink); background: #fff; border: 4px solid var(--soft); border-radius: 18px; padding: 10px 8px; text-align: center; cursor: pointer; min-width: 0; position: relative; }
+  .mcard .me { font-size: 2.2rem; display: block; line-height: 1.2; }
+  .mcard .mn { font-weight: bold; font-size: 1rem; display: block; }
+  .mcard .md { font-size: .78rem; color: #8d6e63; display: block; margin-top: 2px; }
+  .mcard.on { border-color: var(--main); background: #fff3c4; }
+  .mcard .rec { position: absolute; top: -9px; right: 8px; background: #e53935; color: #fff; font-size: .7rem; padding: 0 8px; border-radius: 10px; }
+  #countRow { display: flex; gap: 8px; }
+  .ccard { flex: 1; font: inherit; font-size: 1.25rem; color: var(--ink); background: #fff; border: 4px solid var(--soft); border-radius: 16px; padding: 10px 2px; cursor: pointer; text-align: center; }
+  .ccard small { display: block; font-size: .7rem; color: #8d6e63; }
+  .ccard.on { border-color: var(--main); background: #fff3c4; }
+  .shead { display: flex; align-items: center; gap: 10px; }
+  .qbtn { font: inherit; font-size: .9rem; border: 0; background: #efe6d8; color: var(--ink); border-radius: 12px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+  .sinfo { flex: 1; min-width: 0; font-size: .95rem; }
+  .sbar { height: 10px; background: #eee; border-radius: 8px; overflow: hidden; margin-top: 4px; }
+  .sbar i { display: block; height: 100%; width: 0; background: var(--main); transition: width .3s; }
+  .result { text-align: center; }
+  .result .rbig { font-size: 3rem; letter-spacing: 6px; }
+  .result h2 { margin: 4px 0 10px; }
+  .rstat { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px dashed var(--soft); font-size: 1.05rem; text-align: left; }
+  .rstat b { color: #c66900; }
+  #nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: #fffdf4; border-top: 2px solid var(--soft); padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+  #nav button { flex: 1; font: inherit; font-size: .78rem; color: var(--ink); border: 0; background: none; padding: 8px 2px 8px; cursor: pointer; position: relative; }
+  #nav button .ne { display: block; font-size: 1.6rem; line-height: 1.1; }
+  #nav button.on { color: #c66900; font-weight: bold; background: #fff3c4; }
+  .ndot { position: absolute; top: 6px; left: 55%; width: 10px; height: 10px; border-radius: 50%; background: #e53935; }
+  #nav.hidden { display: none; }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
@@ -179,8 +225,86 @@
 </head>
 <body>
 <div id="app">
-  <h1>かんじ けいさん <button id="sndBtn" aria-label="おと" style="font-size:1.3rem;border:0;background:none;cursor:pointer">🔊</button><button id="gear" aria-label="せってい" style="font-size:1.3rem;border:0;background:none;cursor:pointer">⚙️</button></h1>
-  <section id="panel" class="card hidden">
+  <header id="top">
+    <b class="ttl">かんじ けいさん</b>
+    <span class="coins"><img src="img/i_coin.webp" alt="⭐" width="22" height="22"> <b id="stars">0</b></span>
+    <button id="sndBtn" class="ibtn" aria-label="おと">🔊</button>
+    <button id="gear" class="ibtn" aria-label="せってい">⚙️</button>
+  </header>
+  <div id="storageWarn" class="hidden" style="background:#ffebee;color:#c62828;border-radius:12px;padding:8px 12px;font-size:.9rem">⚠️ この がめんでは あそんだ きろくが のこりません。ふつうの ブラウザで ひらいてね(おうちのひとへ: ⚙️ の コードで きろくを とっておけます)</div>
+
+  <!-- ホーム -->
+  <section id="s-home" class="screen on">
+    <div class="hero card">
+      <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
+      <div id="gameStrip" class="strip"></div>
+    </div>
+    <button class="big-btn cta" id="goStudy">▶ べんきょう する</button>
+    <button class="big-btn sub quick" id="quickGo"></button>
+    <div id="rvLine" class="hidden"></div>
+    <section id="daily" class="card"></section>
+    <button class="card homeTown" id="homeTown"></button>
+  </section>
+
+  <!-- べんきょうの えらびかた -->
+  <section id="s-study" class="screen">
+    <h2 class="sh">① なにを べんきょう する?</h2>
+    <div id="modeGrid"></div>
+    <h2 class="sh">② なんもん やる?</h2>
+    <div id="countRow"></div>
+    <button class="big-btn cta" id="startBtn"></button>
+  </section>
+
+  <!-- べんきょう ちゅう -->
+  <section id="s-session" class="screen">
+    <div class="shead">
+      <button id="quitBtn" class="qbtn">✕ やめる</button>
+      <div class="sinfo"><span id="sessInfo"></span><div class="sbar"><i id="sessBar"></i></div></div>
+    </div>
+    <!-- もんだい -->
+  <section id="quiz" class="card">
+    <div id="formula"></div>
+    <p id="hint"></p>
+    <div id="choices"></div>
+  </section>
+    <!-- なぞりがき -->
+  <section id="trace" class="card hidden">
+    <div id="learn" class="hidden"></div>
+    <p id="traceMsg"></p>
+    <div id="pad"><svg id="sv" viewBox="0 0 109 109"></svg></div>
+    <div id="dbg" class="hidden"></div>
+    <div class="row">
+      <button class="big-btn sub" id="hintBtn">👀 おてほん</button>
+      <button class="big-btn sub" id="clearBtn">🔄 やりなおし</button>
+    </div>
+  </section>
+  </section>
+
+  <!-- けっか -->
+  <section id="s-result" class="screen"></section>
+
+  <!-- まち -->
+  <section id="s-town" class="screen">
+    <section id="town" class="card"></section>
+  </section>
+
+  <!-- ずかん -->
+  <section id="s-zukan" class="screen">
+    <section class="card">
+      <div class="bar"><span>かんじずかん</span><span><b id="gotCount">0</b> / <span id="totalCount">80</span></span></div>
+      <div id="zukan"></div>
+    </section>
+    <section id="rewards" class="card">
+    <div class="rtabs"><button id="rtBadge" class="tab on">🏅 バッジ</button><button id="rtShop" class="tab">🛍️ おみせ</button></div>
+    <div id="rBody"></div>
+  </section>
+    <p class="credit">かきじゅんデータ: KanjiVG (CC BY-SA 3.0) <a href="https://kanjivg.tagaini.net">kanjivg.tagaini.net</a></p>
+  </section>
+
+  <!-- せってい -->
+  <section id="s-settings" class="screen">
+    <button id="backBtn" class="big-btn sub" style="font-size:1rem;padding:10px">← もどる</button>
+    <section id="panel" class="card">
     <b>おうちのひとへ(せってい)</b>
     <div class="opt">かきとりの むずかしさ:
       <label><input type="radio" name="lv" value="0"> やさしい</label>
@@ -203,52 +327,15 @@
     </div>
     <button class="big-btn sub" id="resetBtn" style="font-size:1rem;padding:10px">きろくを ぜんぶ けす</button>
   </section>
-  <div class="bar"><span>⭐ <b id="stars">0</b></span><span>ずかん <b id="gotCount">0</b>/<span id="totalCount">80</span></span></div>
-  <div class="pet"><span class="e" id="petE"></span><span id="petT"></span></div>
-  <div id="gameStrip" class="strip"></div>
-  <section id="daily" class="card"></section>
-  <div id="storageWarn" class="hidden" style="background:#ffebee;color:#c62828;border-radius:12px;padding:8px 12px;font-size:.9rem">⚠️ この がめんでは あそんだ きろくが のこりません。ふつうの ブラウザで ひらいてね(おうちのひとへ: ⚙️ の コードで きろくを とっておけます)</div>
-  <div id="rvLine" class="hidden"></div>
-  <div class="tabs">
-    <button id="tabCalc" class="tab">🔢 けいさん</button>
-    <button id="tabOpp" class="tab">↔ はんたいことば</button>
-    <button id="tabNat" class="tab">🖼️ えから かんじ</button>
-    <button id="tabRead" class="tab">📖 よみクイズ</button>
-    <button id="tabSent" class="tab">📝 ぶんの かんじ</button>
-    <button id="tabMix" class="tab">🎲 80じ ミックス</button>
-  </div>
-
-  <!-- もんだい -->
-  <section id="quiz" class="card">
-    <div id="formula"></div>
-    <p id="hint"></p>
-    <div id="choices"></div>
   </section>
-
-  <!-- なぞりがき -->
-  <section id="trace" class="card hidden">
-    <div id="learn" class="hidden"></div>
-    <p id="traceMsg"></p>
-    <div id="pad"><svg id="sv" viewBox="0 0 109 109"></svg></div>
-    <div id="dbg" class="hidden"></div>
-    <div class="row">
-      <button class="big-btn sub" id="hintBtn">👀 おてほん</button>
-      <button class="big-btn sub" id="clearBtn">🔄 やりなおし</button>
-    </div>
-  </section>
-
-  <!-- ずかん -->
-  <section id="town" class="card"></section>
-  <section class="card">
-    <div style="text-align:center;margin-bottom:6px">かんじずかん</div>
-    <div id="zukan"></div>
-  </section>
-  <section id="rewards" class="card">
-    <div class="rtabs"><button id="rtBadge" class="tab on">🏅 バッジ</button><button id="rtShop" class="tab">🛍️ おみせ</button></div>
-    <div id="rBody"></div>
-  </section>
-  <p class="credit">かきじゅんデータ: KanjiVG (CC BY-SA 3.0) <a href="https://kanjivg.tagaini.net">kanjivg.tagaini.net</a></p>
 </div>
+
+<nav id="nav">
+  <button data-go="home" class="on"><span class="ne">🏠</span>ホーム</button>
+  <button data-go="study"><span class="ne">📚</span>べんきょう</button>
+  <button data-go="town"><span class="ne">🏘️</span>まち<i class="ndot hidden" id="navTownDot"></i></button>
+  <button data-go="zukan"><span class="ne">📖</span>ずかん</button>
+</nav>
 <div id="toast" class="hidden"></div>
 <div id="cheer"></div>
 
@@ -457,6 +544,7 @@ state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: fals
 state.streak = Object.assign({ last: "", n: 0 }, state.streak || {});
 state.daily = Object.assign({ date: "", ids: [], prog: {}, done: {} }, state.daily || {});
 state.stat = Object.assign({ ok: 0, ng: 0, writes: 0, revenge: 0, earned: 0, bestCombo: 0, missions: 0, modes: {} }, state.stat || {});
+state.study = Object.assign({ mode: "mix", count: 10 }, state.study || {});
 state.town = Object.assign({ b: {}, order: [], collect: "" }, state.town || {});
 state.badges = state.badges || {}; state.owned = state.owned || {}; state.equip = state.equip || {};
 let combo = 0;                     // 1かいで れんぞく せいかい(アプリを とじると リセット)
@@ -586,12 +674,6 @@ function renderZukan() {
   const c = Object.keys(state.got).length, si = stageIdx(c), st = STAGES[si], nx = STAGES[si + 1];
   $("petE").innerHTML = petHTML(st.e);
   $("petT").textContent = nx ? `${st.name}(つぎの しんかまで あと ${nx.at - c}こ)` : `${st.name}(さいきょう!)`;
-  $("tabCalc").classList.toggle("on", state.mode === "calc");
-  $("tabOpp").classList.toggle("on", state.mode === "opp");
-  $("tabNat").classList.toggle("on", state.mode === "nat");
-  $("tabRead").classList.toggle("on", state.mode === "read");
-  $("tabSent").classList.toggle("on", state.mode === "sent");
-  $("tabMix").classList.toggle("on", state.mode === "mix");
   $("stars").textContent = state.stars;
   if (typeof renderTown === "function" && $("town")) renderTown();
 }
@@ -654,6 +736,7 @@ $("choices").addEventListener("click", e => {
     locked = true;
     btn.classList.add("ok"); sfx.ok();
     ev(cur.missed ? "okMiss" : "ok", { mode: cur.mode });
+    if (sess) { if (!cur.missed) sess.ok1++; sess.comboBest = Math.max(sess.comboBest, combo); }
     $("hint").textContent = cur.missed
       ? `せいかい! ${byN(n).k} は「${byN(n).r}」。でも ずかんには まだ。おぼえなおして また チャレンジ!`
       : `せいかい! ${byN(n).k} は「${byN(n).r}」`;
@@ -669,7 +752,7 @@ $("choices").addEventListener("click", e => {
       pic.classList.add("morph");
       setTimeout(() => { pic.textContent = byN(n).k; }, 500);
     }
-    setTimeout(startTrace, 1300);
+    later(startTrace, 1300);
   } else {
     btn.classList.add("ng"); btn.disabled = true; sfx.ng();
     if (!cur.missed) ev("ng");
@@ -751,6 +834,7 @@ function quality(userPts, meta) {   // { kind, ok:true/false/null, info }
 }
 
 function startTrace() {
+  if (curScreen !== "session") return;
   const d = byN(cur.ans);
   $("quiz").classList.add("hidden");
   $("trace").classList.remove("hidden");
@@ -925,7 +1009,7 @@ function finishTrace() {
     save(); renderZukan();
     cheer("🔁");
     ev("write");
-    setTimeout(newQuestion, 900);
+    later(afterQuestion, 900);
     return;
   }
   const before = stageIdx(Object.keys(state.got).length);
@@ -943,7 +1027,8 @@ function finishTrace() {
   if (revenge) setTimeout(sfx.sparkle, 300);
   if (evolved) { speak("しんか!"); sfx.evolve(); }
   ev("write", { isNew, revenge });
-  setTimeout(newQuestion, 900);
+  if (sess && isNew) sess.newN++;
+  later(afterQuestion, 900);
 }
 
 function applySettings() {
@@ -952,7 +1037,7 @@ function applySettings() {
   $("dbg").classList.toggle("hidden", !state.set.debug);
   $("optSnd").checked = state.set.sound; $("sndBtn").textContent = state.set.sound ? "🔊" : "🔇";
 }
-$("gear").addEventListener("click", () => { sfx.tap(); $("panel").classList.toggle("hidden"); });
+$("gear").addEventListener("click", () => { sfx.tap(); if (curScreen !== "settings") { prevScreen = curScreen; show("settings"); } });
 $("sndBtn").addEventListener("click", () => { state.set.sound = !state.set.sound; save(); applySettings(); sfx.tap(); });
 $("optSnd").addEventListener("change", e => { state.set.sound = e.target.checked; save(); applySettings(); sfx.tap(); });
 document.querySelectorAll('input[name="lv"]').forEach(r => r.addEventListener("change", () => { state.set.level = +r.value; save(); }));
@@ -973,7 +1058,7 @@ $("resetBtn").addEventListener("click", () => {
   state.stat = { ok: 0, ng: 0, writes: 0, revenge: 0, earned: 0, bestCombo: 0, missions: 0, modes: {} };
   state.badges = {}; state.owned = {}; state.equip = {}; combo = 0;
   state.town = { b: {}, order: [], collect: "" }; state.crewSeen = undefined; townSel = null; townSig = "";
-  save(); renderZukan(); renderGame(); newQuestion();
+  save(); renderZukan(); renderGame();
 });
 applySettings();
 
@@ -1095,6 +1180,7 @@ function renderGame() {
   }).join("");
   renderRewards();
   renderTown();
+  renderHomeExtras();
 }
 let rtab = "badge";
 function renderRewards() {
@@ -1298,7 +1384,7 @@ $("codeCopy").addEventListener("click", async () => {
 $("codeApply").addEventListener("click", () => {
   const ok = mergeCode($("codeIn").value);
   $("codeMsg").textContent = ok ? `もどしたよ! ずかん ${Object.keys(state.got).length}字` : "コードが ただしくないよ。さいしょの「KJ1:」から ぜんぶ はりつけてね";
-  if (ok) { $("codeIn").value = ""; newQuestion(); }
+  if (ok) { $("codeIn").value = ""; }
 });
 function showStatus() {
   const t = state.savedAt ? new Date(state.savedAt).toLocaleString("ja-JP") : "まだ";
@@ -1314,22 +1400,132 @@ if (!hadSaved) idbGet().then(v => {
     if (!o || !o.got || !Object.keys(o.got).length) return;
     Object.assign(state, o);
     state.set = Object.assign({ level: 1, autoDemo: true, quality: true, debug: false, sound: true }, o.set || {});
-    save(); renderZukan(); applySettings(); newQuestion();
+    save(); renderZukan(); renderGame(); applySettings();
   } catch (e) {}
 });
 showStatus();
 
-function setMode(m) { sfx.tap(); state.mode = m; save(); renderZukan(); newQuestion(); }
-$("tabCalc").addEventListener("click", () => setMode("calc"));
-$("tabOpp").addEventListener("click", () => setMode("opp"));
-$("tabNat").addEventListener("click", () => setMode("nat"));
-$("tabRead").addEventListener("click", () => setMode("read"));
-$("tabSent").addEventListener("click", () => setMode("sent"));
-$("tabMix").addEventListener("click", () => setMode("mix"));
+// ---- がめん(ホーム・べんきょう・まち・ずかん) ----
+let curScreen = "home", prevScreen = "home", sess = null, sessSeq = 0;
+function later(fn, ms) { const id = sessSeq; setTimeout(() => { if (id === sessSeq) fn(); }, ms); }   // やめたあとの タイマーを むこうに
+const MODES = [
+  { id: "mix", e: "🎲", n: "80じ ミックス", d: "ぜんぶの かんじから ランダムに", rec: 1 },
+  { id: "read", e: "📖", n: "よみクイズ", d: "かんじの よみを えらぶ" },
+  { id: "sent", e: "📝", n: "ぶんの かんじ", d: "ぶんの ＿に はいる かんじ" },
+  { id: "nat", e: "🖼️", n: "えから かんじ", d: "えを みて かんじを えらぶ" },
+  { id: "calc", e: "🔢", n: "けいさん", d: "かんじの たしざん・ひきざん" },
+  { id: "opp", e: "↔️", n: "はんたいことば", d: "うえ ↔ した など" },
+];
+const COUNTS = [5, 10, 20, 0];
+const modeOf = id => MODES.find(m => m.id === id) || MODES[0];
+const countLabel = c => (c ? `${c}もん` : "ずっと");
+
+function show(name) {
+  curScreen = name;
+  document.querySelectorAll(".screen").forEach(el => el.classList.toggle("on", el.id === "s-" + name));
+  const navKey = (name === "session" || name === "result") ? "study" : name;
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.go === navKey));
+  $("nav").classList.toggle("hidden", name === "session");
+  window.scrollTo(0, 0);
+  if (name === "home") renderGame();
+  if (name === "study") renderStudy();
+  if (name === "town") { townSig = ""; renderTown(); }
+  if (name === "zukan") { renderZukan(); renderRewards(); }
+  if (name === "settings") showStatus();
+}
+document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => {
+  sfx.tap();
+  if (curScreen === "session" && sess) return;           // べんきょう ちゅうは ナビを つかえない
+  show(b.dataset.go);
+}));
+$("backBtn").addEventListener("click", () => { sfx.tap(); show(prevScreen === "settings" ? "home" : prevScreen); });
+
+function renderHomeExtras() {
+  const m = modeOf(state.study.mode);
+  $("quickGo").textContent = `つづき: ${m.e} ${m.n} ${countLabel(state.study.count)} ▶`;
+  const T = state.town, built = tBuilt(), today = todayStr();
+  const canCollect = built.length > 0 && T.collect !== today;
+  const nUp = built.filter(id => { const c = tNextCost(id); return c !== null && state.stars >= c; }).length;
+  const nNew = TOWN.filter(b => !T.b[b.id] && tUnlocked(b) && state.stars >= b.cost[0]).length;
+  const best = built.length ? built[built.length - 1] : null;
+  const img = best ? tImg(best, T.b[best]) : "img/i_hammer.webp";
+  const msg = !built.length ? "まちを つくろう!" : canCollect ? "ごほうびが もらえるよ!" : (nUp || (nNew && built.length < tCap())) ? "レベルアップ できるよ!" : "まちを みにいこう";
+  $("homeTown").innerHTML = `<img src="${img}" alt="" width="52" height="52"><span class="tx"><b>🏘️ かんじの まち</b><small>たてもの ${built.length}こ ・ ${msg}</small></span><span>▶</span>`;
+  $("navTownDot").classList.toggle("hidden", !(canCollect || nUp || (nNew && built.length < tCap())));
+}
+$("goStudy").addEventListener("click", () => { sfx.tap(); show("study"); });
+$("quickGo").addEventListener("click", () => { sfx.tap(); startSession(); });
+$("homeTown").addEventListener("click", () => { sfx.tap(); show("town"); });
+
+function renderStudy() {
+  $("modeGrid").innerHTML = MODES.map(m => `<button class="mcard ${state.study.mode === m.id ? "on" : ""}" data-mode="${m.id}">${m.rec ? '<span class="rec">おすすめ</span>' : ""}<span class="me">${m.e}</span><span class="mn">${m.n}</span><span class="md">${m.d}</span></button>`).join("");
+  $("countRow").innerHTML = COUNTS.map(c => `<button class="ccard ${state.study.count === c ? "on" : ""}" data-count="${c}">${c ? c : "∞"}<small>${c ? "もん" : "ずっと"}</small></button>`).join("");
+  const m = modeOf(state.study.mode);
+  $("startBtn").textContent = `▶ はじめる(${countLabel(state.study.count)})`;
+}
+$("modeGrid").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (!b) return; sfx.tap(); state.study.mode = b.dataset.mode; save(); renderStudy(); });
+$("countRow").addEventListener("click", e => { const b = e.target.closest("[data-count]"); if (!b) return; sfx.tap(); state.study.count = +b.dataset.count; save(); renderStudy(); });
+$("startBtn").addEventListener("click", () => { sfx.tap(); startSession(); });
+
+function startSession() {
+  const { mode, count } = state.study;
+  sessSeq++; state.mode = mode; save();
+  sess = { mode, count, done: 0, ok1: 0, newN: 0, comboBest: 0, earned0: state.stat.earned };
+  combo = 0; quitArmed = false; $("quitBtn").textContent = "✕ やめる";
+  show("session"); renderSessHead(); newQuestion();
+}
+function renderSessHead() {
+  if (!sess) return;
+  $("sessInfo").textContent = sess.count ? `${sess.done + 1} / ${sess.count} もんめ` : `${sess.done + 1} もんめ`;
+  $("sessBar").style.width = (sess.count ? sess.done / sess.count * 100 : 0) + "%";
+}
+function afterQuestion() {
+  if (!sess) return;
+  sess.done++;
+  if (sess.count && sess.done >= sess.count) { showResult(); return; }
+  renderSessHead(); newQuestion();
+}
+let quitArmed = false, quitTimer = null;
+$("quitBtn").addEventListener("click", () => {
+  if (!quitArmed) {
+    quitArmed = true; $("quitBtn").textContent = "ほんとうに やめる?";
+    quitTimer = setTimeout(() => { quitArmed = false; $("quitBtn").textContent = "✕ やめる"; }, 3000);
+    return;
+  }
+  clearTimeout(quitTimer); quitArmed = false; sessSeq++;
+  const s = sess; sess = null; tr = null; locked = true;
+  if (s && s.done > 0 && s.count) { sess = s; showResult(true); return; }   // 1もんでも おわっていれば けっかを みせる
+  show("home");
+});
+function showResult(quit) {
+  const sv0 = sess; sess = null; tr = null;
+  const done = Math.max(sv0.done, 1), total = quit ? done : (sv0.count || done);
+  const acc = sv0.ok1 / done, rating = acc >= 0.9 ? 3 : acc >= 0.6 ? 2 : 1;
+  const earned = state.stat.earned - sv0.earned0, rc = Object.keys(state.review).length;
+  const can = tBuilt().some(id => { const c = tNextCost(id); return c !== null && state.stars >= c; }) || TOWN.some(b => !state.town.b[b.id] && tUnlocked(b) && state.stars >= b.cost[0]);
+  $("s-result").innerHTML = `<section class="card result">
+      <div class="rbig">${"⭐".repeat(rating)}${"☆".repeat(3 - rating)}</div>
+      <h2>${quit ? "ここまで おつかれさま!" : rating === 3 ? "すごい! かんぺき!" : rating === 2 ? "よく がんばったね!" : "つぎは もっと できるよ!"}</h2>
+      <div class="rstat"><span>1かいで せいかい</span><b>${sv0.ok1} / ${total}</b></div>
+      <div class="rstat"><span>あたらしい かんじ</span><b>${sv0.newN} こ</b></div>
+      <div class="rstat"><span>ベスト コンボ</span><b>🔥 ${sv0.comboBest}</b></div>
+      <div class="rstat"><span>ゲットした ⭐</span><b>+${earned}</b></div>
+      <div class="rstat"><span>おぼえなおし のこり</span><b>🔁 ${rc} こ</b></div>
+    </section>
+    <button class="big-btn cta" id="rAgain">もういちど</button>
+    ${can ? '<button class="big-btn sub" id="rTown">🏘️ ⭐で まちを そだてる</button>' : ""}
+    <button class="big-btn sub" id="rOther">ほかの べんきょう</button>
+    <button class="big-btn sub" id="rHome">🏠 ホームへ</button>`;
+  show("result"); sfx.done(); if (rating === 3) setTimeout(sfx.sparkle, 350);
+  $("rAgain").onclick = () => { sfx.tap(); startSession(); };
+  if ($("rTown")) $("rTown").onclick = () => { sfx.tap(); show("town"); };
+  $("rOther").onclick = () => { sfx.tap(); show("study"); };
+  $("rHome").onclick = () => { sfx.tap(); show("home"); };
+}
 
 renderZukan();
 renderGame();
-newQuestion();
+show("home");
 </script>
 </body>
 </html>
