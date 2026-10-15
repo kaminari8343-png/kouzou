@@ -205,6 +205,28 @@
   #nav button.on { color: #c66900; font-weight: bold; background: #fff3c4; }
   .ndot { position: absolute; top: 6px; left: 55%; width: 10px; height: 10px; border-radius: 50%; background: #e53935; }
   #nav.hidden { display: none; }
+  .fieldwrap { position: relative; margin-left: auto; margin-right: auto; user-select: none; -webkit-user-select: none; }
+  .fieldwrap canvas { position: absolute; left: 0; top: 0; }
+  .fobjs, .fsvg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  .fobjs { overflow: visible; }
+  .spr { position: absolute; height: auto; pointer-events: none; -webkit-user-drag: none; }
+  .spr.selected { filter: drop-shadow(0 0 3px #ff8f00) drop-shadow(0 0 6px #ffb300); }
+  .spr.ghost { opacity: .72; }
+  .spr.crew { transition: left 1.3s linear, bottom 1.3s linear; }
+  .spr.hop { animation: hop2 .5s ease-out; }
+  @keyframes hop2 { 40% { transform: translateY(-14px); } }
+  .fhit { position: absolute; inset: 0; cursor: pointer; z-index: 99999; }
+  .arow { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tbtn.sub2 { background: #8d6e63; }
+  .pathprev { width: 38%; max-width: 110px; aspect-ratio: 2/1; background: #ead9a8; border: 2px solid #c9b37c; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .pathprev.small { width: 56px; height: 28px; margin: 14px auto; }
+  .ptabs { margin-top: 12px; }
+  .pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .pcard { font: inherit; color: var(--ink); background: #fff; border: 3px solid var(--soft); border-radius: 12px; padding: 4px 2px; text-align: center; cursor: pointer; min-width: 0; font-size: .72rem; line-height: 1.25; }
+  .pcard img { display: block; margin: 0 auto 2px; object-fit: contain; }
+  .pcard small { display: block; color: #8d6e63; }
+  .pcard.placed { background: #f1f8e9; border-color: #c5e1a5; }
+  .pcard.lock { background: #eee; } .pcard.lock img { filter: grayscale(1); opacity: .4; }
   .credit { text-align: center; font-size: .7rem; color: #a1887f; margin: 4px 0 12px; }
   .row { display: flex; gap: 10px; margin-top: 10px; }
 
@@ -1057,7 +1079,8 @@ $("resetBtn").addEventListener("click", () => {
   state.streak = { last: "", n: 0 }; state.daily = { date: "", ids: [], prog: {}, done: {} };
   state.stat = { ok: 0, ng: 0, writes: 0, revenge: 0, earned: 0, bestCombo: 0, missions: 0, modes: {} };
   state.badges = {}; state.owned = {}; state.equip = {}; combo = 0;
-  state.town = { b: {}, order: [], collect: "" }; state.crewSeen = undefined; townSel = null; townSig = "";
+  state.town = { b: {}, order: [], collect: "", placed: {}, decor: [], dinv: {}, path: [], layoutV: 2 }; state.crewSeen = undefined;
+  townUI.sel = null; townUI.hold = null; townUI.shop = null; townSig = "";
   save(); renderZukan(); renderGame();
 });
 applySettings();
@@ -1094,6 +1117,7 @@ const BADGES = [
   { id: "b5", e: "🏘️", n: "たてもの 5こ", t: () => tBuilt().length >= 5 },
   { id: "bmax", e: "🌟", n: "たてものを さいだいに", t: () => tBuilt().some(id => state.town.b[id] >= tDef(id).lv) },
   { id: "crew5", e: "🤝", n: "なかま 5にん", t: () => CREW.filter(m => gotCount() >= m.at).length >= 5 },
+  { id: "d10", e: "🌸", n: "かざり 10こ", t: () => ((state.town.decor || []).length + (state.town.path || []).length) >= 10 },
   { id: "st50", e: "💎", n: "⭐ 50こ", t: () => state.stat.earned >= 50 },
 ];
 const SHOP = [
@@ -1258,12 +1282,12 @@ const tDef = id => TOWN.find(b => b.id === id);
 const tImg = (id, lv) => `img/${id}${lv}.webp`;
 const gotCount = () => Object.keys(state.got).length;
 const tUnlocked = b => b.k.some(c => state.got[kn(c)]);
-const tCap = () => 4 + Math.floor(gotCount() / 5);
+const tCap = () => 99;
 const tBuilt = () => state.town.order.filter(id => state.town.b[id]);
 const tTotalLv = () => tBuilt().reduce((t, id) => t + state.town.b[id], 0);
 const tIncome = () => Math.min(1 + Math.floor(tTotalLv() / 3), 8);
 const tNextCost = id => { const b = tDef(id), lv = state.town.b[id] || 0; return lv >= b.lv ? null : b.cost[lv]; };
-let townSel = null, townFlash = null, townSig = "";
+let townSel = null, townFlash = null;
 const coinImg = `<img src="img/i_coin.webp" alt="⭐" width="20" height="20">`;
 
 function checkCrew() {
@@ -1273,76 +1297,365 @@ function checkCrew() {
     state.crewSeen[m.id] = 1; sfx.badge(); toast(`🤝 なかまが ふえたよ! ${m.name}`);
   }
 }
-function renderTown() {
-  const T = state.town, built = tBuilt(), cap = tCap(), today = todayStr();
-  const canCollect = built.length > 0 && T.collect !== today;
-  const afford = (id => { const c = tNextCost(id); return c !== null && state.stars >= c; });
-  const nUp = built.filter(afford).length;
-  const nNew = TOWN.filter(b => !T.b[b.id] && tUnlocked(b) && state.stars >= b.cost[0]).length;
-  const sig = JSON.stringify([T.b, T.order, T.collect === today, townSel, townFlash, cap, nUp, nNew > 0 && built.length < cap, gotCount(), TOWN.map(b => +tUnlocked(b)).join("")]);
-  if (sig === townSig) return; townSig = sig;
-  const crew = `<div class="crew">` + CREW.map(m => gotCount() >= m.at
-    ? `<button data-act="crew" data-id="${m.id}" aria-label="${m.name}"><img src="img/c_${m.id}.webp" alt="${m.name}" width="44" height="44"></button>`
-    : `<button class="lock" disabled title="あと ${m.at - gotCount()}じ">?</button>`).join("") + `</div>`;
-  const head = `<div class="thead"><div><h3>🏘️ かんじの まち${(nUp || (nNew && built.length < cap)) ? '<span class="newdot">NEW</span>' : ""}</h3>
-      <div class="tsub">たてもの ${built.length}/${cap}(かんじが ふえると ひろがるよ)</div></div>
-      <button class="tchest ${canCollect ? "ready" : "done"}" data-act="collect"><img src="img/i_chest.webp" alt="" width="34" height="34">${built.length ? (canCollect ? `ごほうび ${coinImg}${tIncome()}` : "また あした!") : "まず たてよう"}</button></div>`;
-  let grid = built.map(id => {
-    const b = tDef(id), lv = T.b[id];
-    return `<button class="tcell ${townSel === id ? "sel" : ""} ${townFlash === id ? "pop" : ""}" data-act="sel" data-id="${id}"><img src="${tImg(id, lv)}" alt="${b.name}" width="86" height="86" loading="lazy" decoding="async"><div>${b.name}</div><div class="tlv">Lv.${lv}${lv >= b.lv ? " ★" : ""}</div></button>`;
-  }).join("");
-  if (built.length < cap) grid += `<button class="tcell add ${townSel === "build" ? "sel" : ""}" data-act="build"><span class="plus">＋</span><span>たてる</span></button>`;
-  let panel = "";
-  if (townSel === "build") {
-    const rows = TOWN.filter(b => !T.b[b.id]).map(b => ({ b, ok: tUnlocked(b) })).sort((x, y) => y.ok - x.ok);
-    panel = `<div class="tpanel"><b>なにを たてる?</b><div class="blist">` + rows.map(({ b, ok }) => {
-      const can = ok && state.stars >= b.cost[0];
-      return ok
-        ? `<div class="bi"><img src="${tImg(b.id, 1)}" alt="" width="52" height="52" loading="lazy"><div class="tx"><b>${b.name}</b><br>${b.k.map(c => `<span class="tchip">${c}</span>`).join("")}</div><button class="tbtn ${can ? "" : "off"}" data-act="make" data-id="${b.id}">${coinImg}${b.cost[0]} で たてる</button></div>`
-        : `<div class="bi lock"><img src="${tImg(b.id, 1)}" alt="" width="52" height="52" loading="lazy"><div class="tx"><b>？？？</b><br>🔒 ${b.k.map(c => `「${c}」`).join("か")}を ゲットすると ひらくよ</div></div>`;
-    }).join("") + `</div></div>`;
-  } else if (townSel && T.b[townSel]) {
-    const b = tDef(townSel), lv = T.b[townSel], c = tNextCost(townSel);
-    panel = `<div class="tpanel"><div class="big"><img src="${tImg(townSel, lv)}" alt="${b.name}"><div class="info"><div class="nm">${b.name}</div>
-      <div class="tlv">Lv.${lv} / ${b.lv}</div><div class="tsub">ひらいた かんじ: ${b.k.filter(k => state.got[kn(k)]).map(k => `<span class="tchip">${k}</span>`).join("")}</div>`
-      + (c === null ? `<div style="margin-top:6px">🌟 さいだいレベル!</div>`
-        : `<button class="tbtn ${state.stars >= c ? "" : "off"}" data-act="up" data-id="${townSel}">${coinImg}${c} で レベルアップ</button>`) + `</div></div></div>`;
-  } else if (!built.length) {
-    panel = `<div class="tpanel" style="text-align:center">まだ なにも ないよ。「＋ たてる」から はじめよう!</div>`;
+// ---- まちの フィールド(すきな ところに おいて あそぶ) ----
+const ASP = {"c_cat":1.04,"c_fox":1.0,"c_ghost":1.0,"c_knight":1.02,"c_ninja":1.0,"c_prince":1.06,"c_ranger":0.98,"c_robot":1.0,"c_witch":0.99,"camp1":0.92,"camp2":0.95,"castle1":0.98,"castle2":1.0,"castle3":1.01,"decor_bench":0.99,"decor_cafe":0.99,"decor_church":1.02,"decor_golem":1.01,"decor_owl":1.0,"decor_ruins":1.02,"field1":0.97,"field2":1.01,"field3":1.01,"flowers1":1.05,"flowers2":1.05,"flowers3":1.0,"fountain1":0.76,"fountain2":0.96,"fountain3":0.97,"fountain4":0.98,"gems1":1.07,"gems2":1.08,"gems3":1.05,"harbor1":0.93,"harbor2":0.94,"harbor3":0.91,"houses1":1.01,"houses2":0.97,"houses3":0.98,"i_chest":1.02,"i_coin":0.97,"i_hammer":1.02,"i_map":0.98,"lantern1":0.99,"lantern2":0.97,"lantern3":1.02,"library1":1.0,"library2":0.98,"library3":0.99,"lighthouse1":0.97,"lighthouse2":1.13,"lighthouse3":1.03,"mill1":1.06,"mill2":0.99,"monument1":0.96,"monument2":1.0,"monument3":1.01,"onsen1":1.01,"onsen2":0.91,"onsen3":0.98,"park1":0.97,"park2":1.02,"park3":0.99,"rainbow1":1.11,"rainbow2":0.96,"rainbow3":1.0,"ranch1":0.96,"ranch2":0.98,"ranch3":0.95,"school1":0.85,"school2":1.01,"scope1":0.98,"scope2":0.95,"scope3":0.97,"shrine1":1.02,"shrine2":1.02,"shrine3":1.01,"shrine4":0.99,"stall1":0.88,"stall2":1.0,"stall3":0.99,"tower1":1.0,"tower2":1.02,"tower3":1.0,"treasure1":0.99,"treasure2":0.68,"treasure3":1.02,"tree1":1.01,"tree2":1.0,"tree3":1.01,"tree4":1.0};   // 絵の たて/よこ(高さの けいさん用)
+const FP = { tree: 1, field: 2, ranch: 2, houses: 2, harbor: 3, mill: 2, onsen: 2, fountain: 2, rainbow: 2, monument: 2, shrine: 2, flowers: 1, tower: 2, lighthouse: 1, scope: 2, castle: 3, school: 2, library: 2, park: 3, stall: 2, camp: 2, treasure: 1, gems: 1, lantern: 1 };
+const DECOR = [
+  { id: "path", name: "みち", flat: true, p: 1 },
+  { id: "d_sapling", name: "わかぎ", img: "tree1", fp: 1, p: 1 },
+  { id: "d_tree", name: "き", img: "tree2", fp: 1, p: 2 },
+  { id: "d_bouquet", name: "はなたば", img: "flowers1", fp: 1, p: 1 },
+  { id: "d_flower", name: "チューリップ", img: "flowers2", fp: 1, p: 1 },
+  { id: "d_sun", name: "ひまわり", img: "flowers3", fp: 1, p: 2 },
+  { id: "d_bench", name: "ベンチ", img: "decor_bench", fp: 1, p: 2 },
+  { id: "d_lantern", name: "ちょうちん", img: "lantern1", fp: 1, p: 2 },
+  { id: "d_golden", name: "きんの あかり", img: "lantern3", fp: 1, p: 4 },
+  { id: "d_gem", name: "ほうせき", img: "gems1", fp: 1, p: 3 },
+  { id: "d_crystal", name: "クリスタル", img: "gems3", fp: 1, p: 6 },
+  { id: "d_pond", name: "いけ", img: "fountain1", fp: 2, p: 4 },
+  { id: "d_ruins", name: "いせき", img: "decor_ruins", fp: 2, p: 4 },
+  { id: "d_golem", name: "ゴーレム", img: "decor_golem", fp: 2, p: 6 },
+  { id: "d_church", name: "きょうかい", img: "decor_church", fp: 2, p: 10 },
+  { id: "d_cafe", name: "カフェ", img: "decor_cafe", fp: 2, p: 10 },
+  { id: "d_owl", name: "ふくろうの いえ", img: "decor_owl", fp: 2, p: 10 },
+];
+const dDef = id => DECOR.find(d => d.id === id);
+const imgSrc = key => `img/${key}.webp`;
+const tN = () => 6 + Math.min(4, Math.floor(gotCount() / 20));
+const townUI = { sel: null, hold: null, tab: "b", shop: null };
+const crewPos = {};
+const keyOf = (x, y) => x + "," + y;
+
+function findSpot(fp, N, occ) {
+  for (let y = 0; y + fp <= N; y++) for (let x = 0; x + fp <= N; x++) {
+    let ok = true;
+    for (let i = 0; i < fp && ok; i++) for (let j = 0; j < fp; j++) if (occ.has(keyOf(x + i, y + j))) { ok = false; break; }
+    if (ok) return { x, y };
   }
-  $("town").innerHTML = head + crew + `<div class="tgrid">${grid}</div>` + panel;
-  townFlash = null;
+  return null;
 }
+function addCells(occ, x, y, fp) { for (let i = 0; i < fp; i++) for (let j = 0; j < fp; j++) occ.add(keyOf(x + i, y + j)); }
+function townInit() {               // まえの たてものを ならべる / はみだしを しまう
+  const T = state.town, N = tN();
+  T.placed = T.placed || {}; T.decor = T.decor || []; T.dinv = T.dinv || {}; T.path = T.path || [];
+  if (!T.layoutV) {
+    T.layoutV = 2;
+    const occ = new Set();
+    for (const id of T.order.filter(i => T.b[i] && tDef(i)).sort((a, c) => FP[c] - FP[a])) {
+      const pos = findSpot(FP[id], N, occ);
+      if (pos) { T.placed[id] = { x: pos.x, y: pos.y, flip: 0 }; addCells(occ, pos.x, pos.y, FP[id]); }
+    }
+  }
+  const occ = new Set(), fits = (x, y, fp) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x + fp <= N && y + fp <= N;
+  const clear = (x, y, fp) => { for (let i = 0; i < fp; i++) for (let j = 0; j < fp; j++) if (occ.has(keyOf(x + i, y + j))) return false; return true; };
+  for (const id of Object.keys(T.placed)) {
+    const q = T.placed[id], fp = FP[id];
+    if (!T.b[id] || !fp || !fits(q.x, q.y, fp) || !clear(q.x, q.y, fp)) { delete T.placed[id]; continue; }
+    addCells(occ, q.x, q.y, fp);
+  }
+  T.decor = T.decor.filter(o => {
+    const d = dDef(o.d);
+    if (!d || d.flat) return false;
+    if (!fits(o.x, o.y, d.fp) || !clear(o.x, o.y, d.fp)) { T.dinv[o.d] = (T.dinv[o.d] || 0) + 1; return false; }
+    addCells(occ, o.x, o.y, d.fp); return true;
+  });
+  T.path = T.path.filter(k => { const [x, y] = k.split(",").map(Number); return x >= 0 && y >= 0 && x < N && y < N; });
+}
+function occMap(skip) {             // マス → なにが ある?
+  const T = state.town, m = new Map();
+  for (const id of Object.keys(T.placed)) {
+    if (skip && skip.kind === "b" && skip.id === id) continue;
+    const q = T.placed[id]; for (let i = 0; i < FP[id]; i++) for (let j = 0; j < FP[id]; j++) m.set(keyOf(q.x + i, q.y + j), { kind: "b", id });
+  }
+  T.decor.forEach((o, idx) => {
+    if (skip && skip.kind === "d" && skip.idx === idx) return;
+    const fp = dDef(o.d).fp; for (let i = 0; i < fp; i++) for (let j = 0; j < fp; j++) m.set(keyOf(o.x + i, o.y + j), { kind: "d", idx });
+  });
+  return m;
+}
+function geom() {
+  const N = tN(), avail = Math.max(260, Math.min(520, window.innerWidth - 60));
+  const TW = Math.max(20, Math.floor(avail / N / 2) * 2), TH = TW / 2;
+  return { N, TW, TH, W: N * TW, H: Math.round(N * TH + TW * 0.24), ox: N * TW / 2 };
+}
+const gpt = (g, cx, cy) => ({ x: (cx - cy) * g.TW / 2 + g.ox, y: (cx + cy) * g.TH / 2 });   // マスの かどの ざひょう
+function drawGround(cv, g, T) {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = g.W * dpr; cv.height = g.H * dpr; cv.style.width = g.W + "px"; cv.style.height = g.H + "px";
+  const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const th = Math.round(g.TW * 0.22), L = gpt(g, 0, g.N), B = gpt(g, g.N, g.N), R = gpt(g, g.N, 0);
+  c.fillStyle = "#7b5a3a"; c.beginPath(); c.moveTo(L.x, L.y); c.lineTo(B.x, B.y); c.lineTo(B.x, B.y + th); c.lineTo(L.x, L.y + th); c.closePath(); c.fill();
+  c.fillStyle = "#9a7650"; c.beginPath(); c.moveTo(B.x, B.y); c.lineTo(R.x, R.y); c.lineTo(R.x, R.y + th); c.lineTo(B.x, B.y + th); c.closePath(); c.fill();
+  const pathSet = new Set(T.path), rnd = seeded("field");
+  for (let y = 0; y < g.N; y++) for (let x = 0; x < g.N; x++) {
+    const a = gpt(g, x, y), b = gpt(g, x + 1, y), d = gpt(g, x + 1, y + 1), e = gpt(g, x, y + 1);
+    const isPath = pathSet.has(keyOf(x, y));
+    c.fillStyle = isPath ? ((x + y) % 2 ? "#ead9a8" : "#e2cf9a") : ((x + y) % 2 ? "#a9d874" : "#9ccd66");
+    c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(d.x, d.y); c.lineTo(e.x, e.y); c.closePath(); c.fill();
+    c.strokeStyle = isPath ? "#c9b37c" : "#86b653"; c.lineWidth = 1; c.stroke();
+    if (!isPath && rnd() < 0.35) {       // くさの てん
+      const cx = (a.x + d.x) / 2 + (rnd() - 0.5) * g.TW * 0.3, cy = (a.y + d.y) / 2 + (rnd() - 0.5) * g.TH * 0.3;
+      c.fillStyle = rnd() < 0.5 ? "#7fb04a" : "#fff59d"; c.fillRect(cx, cy, Math.max(2, g.TW * 0.05), Math.max(2, g.TW * 0.05));
+    }
+  }
+}
+const keyFromSrc = src => src.replace("img/", "").replace(".webp", "");
+function sprRect(g, src, x, y, fp, wMul) {
+  const w = g.TW * fp * wMul, h = w * (ASP[keyFromSrc(src)] || 1.1);
+  const bx = gpt(g, x + fp, y + fp).x, by = gpt(g, x + fp, y + fp).y - g.TH * 0.12 * fp;
+  return { left: bx - w / 2, top: by - h, w, h, by, z: Math.round((x + y + 2 * fp) * 10) };
+}
+function sprite(src, g, x, y, fp, wMul, flip, extra) {
+  const r = sprRect(g, src, x, y, fp, wMul);
+  return `<img class="spr ${extra || ""}" src="${src}" alt="" draggable="false" style="width:${Math.round(r.w)}px;left:${Math.round(r.left)}px;bottom:${Math.round(g.H - r.by)}px;z-index:${r.z};${flip ? "transform:scaleX(-1);" : ""}">`;
+}
+function objRects(g) {                 // いま フィールドに ある ぜんぶの えの はんい
+  const T = state.town, out = [];
+  for (const id of Object.keys(T.placed)) { const q = T.placed[id]; out.push({ kind: "b", id, ...sprRect(g, tImg(id, T.b[id]), q.x, q.y, FP[id], 0.9 + 0.12 * (T.b[id] - 1)) }); }
+  T.decor.forEach((o, idx) => { const d = dDef(o.d); out.push({ kind: "d", idx, ...sprRect(g, imgSrc(d.img), o.x, o.y, d.fp, 1) }); });
+  return out;
+}
+function crewStyle(g, m, pos) {
+  const w = Math.round(g.TW * 1.05), c = gpt(g, pos.x + 0.5, pos.y + 0.5);
+  return { w, left: Math.round(c.x - w / 2), bottom: Math.round(g.H - (c.y + g.TH * 0.22)), z: Math.round((pos.x + pos.y + 1) * 10) + 3 };
+}
+function holdInfo() {
+  const h = townUI.hold; if (!h) return null;
+  if (h.kind === "path") return { fp: 1, img: null };
+  if (h.kind === "b") return { fp: FP[h.id], img: tImg(h.id, state.town.b[h.id] || 1), mul: 0.9 + 0.12 * ((state.town.b[h.id] || 1) - 1) };
+  if (h.kind === "d") { const d = dDef(h.id); return { fp: d.fp, img: imgSrc(d.img), mul: 1 }; }
+  if (h.kind === "move") {
+    if (h.ref.kind === "b") { const id = h.ref.id; return { fp: FP[id], img: tImg(id, state.town.b[id]), mul: 0.9 + 0.12 * (state.town.b[id] - 1) }; }
+    const d = dDef(state.town.decor[h.ref.idx].d); return { fp: d.fp, img: imgSrc(d.img), mul: 1 };
+  }
+}
+function ghostOk(h, info, g) {
+  if (!h.ghost) return false;
+  const { x, y } = h.ghost, fp = info.fp;
+  if (x < 0 || y < 0 || x + fp > g.N || y + fp > g.N) return false;
+  const occ = occMap(h.kind === "move" ? h.ref : null);
+  for (let i = 0; i < fp; i++) for (let j = 0; j < fp; j++) if (occ.has(keyOf(x + i, y + j))) return false;
+  return true;
+}
+let townSig = "";
+function renderTown() {
+  townInit();
+  const T = state.town, g = geom(), today = todayStr(), N = g.N;
+  const placedIds = Object.keys(T.placed), canCollect = tBuilt().length > 0 && T.collect !== today;
+  const sig = JSON.stringify([T, townUI.sel, townUI.hold, townUI.tab, townUI.shop, g.TW, N, state.stars, canCollect, gotCount(), Object.keys(state.crewSeen || {}).length]);
+  if (sig === townSig) return; townSig = sig;
+  const unlockedCrew = CREW.filter(m => gotCount() >= m.at);
+  for (const m of unlockedCrew) {       // なかまの いちを きめる
+    const occ = occMap(), cur = crewPos[m.id];
+    if (!cur || cur.x >= N || cur.y >= N || occ.has(keyOf(cur.x, cur.y))) {
+      const free = []; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!occ.has(keyOf(x, y))) free.push({ x, y });
+      if (free.length) crewPos[m.id] = free[Math.floor(Math.random() * free.length)];
+    }
+  }
+  const nextAt = N < 10 ? (Math.floor(gotCount() / 20) + 1) * 20 : null;
+  const head = `<div class="thead"><div><h3>🏘️ わたしの まち</h3>
+      <div class="tsub">ひろさ ${N}×${N}${nextAt ? ` ・ あと ${nextAt - gotCount()}じで ひろがるよ` : " ・ いちばん ひろい!"}</div></div>
+      <button class="tchest ${canCollect ? "ready" : "done"}" data-act="collect"><img src="img/i_chest.webp" alt="" width="34" height="34">${tBuilt().length ? (canCollect ? `ごほうび ${coinImg}${tIncome()}` : "また あした!") : "まず かおう"}</button></div>`;
+  // フィールド
+  let objs = "";
+  const items = [];
+  for (const id of placedIds) { const q = T.placed[id]; items.push({ z: q.x + q.y, html: sprite(tImg(id, T.b[id]), g, q.x, q.y, FP[id], 0.9 + 0.12 * (T.b[id] - 1), q.flip, townUI.sel && townUI.sel.kind === "b" && townUI.sel.id === id ? "selected" : "") }); }
+  T.decor.forEach((o, idx) => { const d = dDef(o.d); items.push({ z: o.x + o.y, html: sprite(imgSrc(d.img), g, o.x, o.y, d.fp, 1, o.flip, townUI.sel && townUI.sel.kind === "d" && townUI.sel.idx === idx ? "selected" : "") }); });
+  objs += items.map(i => i.html).join("");
+  for (const m of unlockedCrew) { const pos = crewPos[m.id]; if (!pos) continue; const st = crewStyle(g, m, pos);
+    objs += `<img class="spr crew" id="crew-${m.id}" src="img/c_${m.id}.webp" alt="" draggable="false" style="width:${st.w}px;left:${st.left}px;bottom:${st.bottom}px;z-index:${st.z}">`; }
+  // ゴースト(おく よてい)
+  let svg = "";
+  const h = townUI.hold, info = holdInfo();
+  if (h && info && h.kind !== "path" && h.ghost) {
+    const ok = ghostOk(h, info, g), { x, y } = h.ghost, fp = info.fp;
+    const a = gpt(g, x, y), b = gpt(g, x + fp, y), d = gpt(g, x + fp, y + fp), e = gpt(g, x, y + fp);
+    svg = `<svg class="fsvg" width="${g.W}" height="${g.H}"><polygon points="${a.x},${a.y} ${b.x},${b.y} ${d.x},${d.y} ${e.x},${e.y}" fill="${ok ? "rgba(76,175,80,.45)" : "rgba(229,57,53,.45)"}" stroke="${ok ? "#2e7d32" : "#c62828"}" stroke-width="2"/></svg>`;
+    objs += sprite(info.img, g, x, y, fp, info.mul, 0, "ghost");
+  }
+  let over = 0;
+  for (const r of objRects(g)) over = Math.max(over, -r.top);
+  if (h && info && h.kind !== "path" && h.ghost) over = Math.max(over, -sprRect(g, info.img, h.ghost.x, h.ghost.y, info.fp, info.mul).top);
+  const mt = Math.ceil(Math.max(over, 6)) + 4;
+  const field = `<div class="fieldwrap" id="fieldwrap" style="width:${g.W}px;height:${g.H}px;margin-top:${mt}px"><canvas id="fcv"></canvas>${svg}<div class="fobjs">${objs}</div><div id="fhit" class="fhit" style="top:${-mt}px;height:${g.H + mt}px"></div></div>`;
+  // パネル
+  let panel = "";
+  if (h) {
+    if (h.kind === "path") panel = `<div class="tpanel"><b>🛤️ みちを ひく</b><div class="tsub">マスを タップで ひく(⭐1)。もういちど タップで けす</div><button class="tbtn" data-act="holdend">おわり</button></div>`;
+    else {
+      const ok = ghostOk(h, info, g), label = h.kind === "move" ? "うごかす" : "おく";
+      panel = `<div class="tpanel"><b>どこに ${label}?</b><div class="tsub">${h.ghost ? (ok ? "ここで いいかな?" : "そこには おけないよ。べつの マスを タップ") : "マスを タップしてね"}</div>
+        <button class="tbtn ${ok ? "" : "off"}" data-act="put">ここに ${label} ✓</button> <button class="tbtn sub2" data-act="holdend">やめる</button></div>`;
+    }
+  } else if (townUI.sel) {
+    const sl = townUI.sel;
+    if (sl.kind === "b" && T.placed[sl.id]) {
+      const b = tDef(sl.id), lv = T.b[sl.id], c = tNextCost(sl.id);
+      panel = `<div class="tpanel"><div class="big"><img src="${tImg(sl.id, lv)}" alt=""><div class="info"><div class="nm">${b.name}</div><div class="tlv">Lv.${lv} / ${b.lv}</div>`
+        + (c === null ? `<div>🌟 さいだいレベル!</div>` : `<button class="tbtn ${state.stars >= c ? "" : "off"}" data-act="up" data-id="${sl.id}">${coinImg}${c} で レベルアップ</button>`)
+        + `</div></div><div class="arow"><button class="tbtn sub2" data-act="move">✋ うごかす</button><button class="tbtn sub2" data-act="flip">↔ はんてん</button><button class="tbtn sub2" data-act="store">📦 しまう</button></div></div>`;
+    } else if (sl.kind === "d" && T.decor[sl.idx]) {
+      const d = dDef(T.decor[sl.idx].d);
+      panel = `<div class="tpanel"><div class="big"><img src="${imgSrc(d.img)}" alt=""><div class="info"><div class="nm">${d.name}</div><div class="tsub">かざり</div></div></div><div class="arow"><button class="tbtn sub2" data-act="move">✋ うごかす</button><button class="tbtn sub2" data-act="flip">↔ はんてん</button><button class="tbtn sub2" data-act="store">📦 しまう</button></div></div>`;
+    }
+  } else if (townUI.shop) {
+    const sh = townUI.shop;
+    if (sh.kind === "b") {
+      const b = tDef(sh.id), owned = !!T.b[sh.id], ok = tUnlocked(b);
+      if (!ok && !owned) panel = `<div class="tpanel"><b>？？？</b><div class="tsub">🔒 ${b.k.map(c => `「${c}」`).join("か")}を ゲットすると ひらくよ</div></div>`;
+      else panel = `<div class="tpanel"><div class="big"><img src="${tImg(sh.id, owned ? T.b[sh.id] : 1)}" alt=""><div class="info"><div class="nm">${b.name}</div>${b.k.map(c => `<span class="tchip">${c}</span>`).join("")}<br>`
+        + (owned ? `<button class="tbtn" data-act="shopput">おく</button>` : `<button class="tbtn ${state.stars >= b.cost[0] ? "" : "off"}" data-act="shopbuy">${coinImg}${b.cost[0]} で かう</button>`) + `</div></div></div>`;
+    } else {
+      const d = dDef(sh.id), inv = T.dinv[sh.id] || 0;
+      panel = `<div class="tpanel"><div class="big">${d.flat ? '<div class="pathprev"></div>' : `<img src="${imgSrc(d.img)}" alt="">`}<div class="info"><div class="nm">${d.name}</div><div class="tsub">${d.flat ? "じめんに ひく" : "なんこでも おけるよ"}</div>`
+        + (d.flat ? `<button class="tbtn" data-act="pathmode">みちを ひく(⭐1/マス)</button>`
+          : (inv ? `<button class="tbtn" data-act="shopput">しまってある ×${inv} を おく</button><br>` : "") + `<button class="tbtn ${state.stars >= d.p ? "" : "off"}" data-act="shopbuy">${coinImg}${d.p} で かって おく</button>`)
+        + `</div></div></div>`;
+    }
+  } else {
+    panel = `<div class="tpanel tsub">じめんを タップで、たてものや かざりを えらべるよ。したの ならびから えらんで、すきな ところに おこう!</div>`;
+  }
+  // えらぶ ならび
+  const tabs = `<div class="rtabs ptabs"><button class="tab ${townUI.tab === "b" ? "on" : ""}" data-act="tab" data-id="b">🏠 たてもの</button><button class="tab ${townUI.tab === "d" ? "on" : ""}" data-act="tab" data-id="d">🌸 かざり</button></div>`;
+  let cards = "";
+  if (townUI.tab === "b") {
+    cards = [...TOWN].sort((a, c) => ((tUnlocked(a) || T.b[a.id]) ? 0 : 1) - ((tUnlocked(c) || T.b[c.id]) ? 0 : 1)).map(b => {
+      const placed = !!T.placed[b.id], owned = !!T.b[b.id], ok = tUnlocked(b);
+      const sub = placed ? "おいてある" : owned ? "しまってある" : ok ? `⭐${b.cost[0]}` : "🔒";
+      return `<button class="pcard ${placed ? "placed" : ""} ${!ok && !owned ? "lock" : ""}" data-act="pick" data-kind="b" data-id="${b.id}"><img src="${tImg(b.id, owned ? T.b[b.id] : 1)}" alt="" width="56" height="56" loading="lazy"><span>${ok || owned ? b.name : "？？？"}</span><small>${sub}</small></button>`;
+    }).join("");
+  } else {
+    cards = DECOR.map(d => `<button class="pcard" data-act="pick" data-kind="d" data-id="${d.id}">${d.flat ? '<div class="pathprev small"></div>' : `<img src="${imgSrc(d.img)}" alt="" width="56" height="56" loading="lazy">`}<span>${d.name}</span><small>⭐${d.p}${T.dinv[d.id] ? ` ・ ×${T.dinv[d.id]}` : ""}</small></button>`).join("");
+  }
+  $("town").innerHTML = head + field + panel + tabs + `<div class="pgrid">${cards}</div>`;
+  drawGround($("fcv"), g, T);
+}
+function cellOf(e) {
+  const el = $("fieldwrap"), r = el.getBoundingClientRect(), g = geom(), k = g.W / r.width;
+  const fx = (e.clientX - r.left) * k, fy = (e.clientY - r.top) * k;      // フィールドの ひだりうえが (0,0)
+  const px = fx - g.ox, py = fy;
+  const u = px / (g.TW / 2), v = py / (g.TH / 2);
+  return { x: Math.floor((u + v) / 2), y: Math.floor((v - u) / 2), g, fx, fy };
+}
+function onFieldTap(e) {
+  const { x, y, g, fx, fy } = cellOf(e), T = state.town;
+  const h = townUI.hold;
+  if (!h) {                           // たてものの うえの ほうを タップしても えらべる
+    let best = null;
+    for (const r of objRects(g)) {
+      const mx = r.w * 0.2;
+      if (fx >= r.left + mx && fx <= r.left + r.w - mx && fy >= r.top + r.h * 0.12 && fy <= r.by && (!best || r.z > best.z)) best = r;
+    }
+    if (best) { townUI.shop = null; townUI.sel = best.kind === "b" ? { kind: "b", id: best.id } : { kind: "d", idx: best.idx }; sfx.tap(); return true; }
+  }
+  if (x < 0 || y < 0 || x >= g.N || y >= g.N) { if (!townUI.hold) { townUI.sel = null; } return true; }
+  if (h) {
+    if (h.kind === "path") {
+      const k = keyOf(x, y), i = T.path.indexOf(k);
+      if (i >= 0) { T.path.splice(i, 1); sfx.tap(); }
+      else if (state.stars >= 1) { state.stars -= 1; T.path.push(k); sfx.tap(); }
+      else { sfx.ng(); toast("⭐が たりないよ"); }
+      save(); renderZukan();
+    } else {
+      const info = holdInfo(), half = Math.floor(info.fp / 2);
+      h.ghost = { x: Math.max(0, Math.min(g.N - info.fp, x - half)), y: Math.max(0, Math.min(g.N - info.fp, y - half)) };
+      sfx.tap();
+    }
+    return true;
+  }
+  const m = CREW.find(c => crewPos[c.id] && crewPos[c.id].x === x && crewPos[c.id].y === y && gotCount() >= c.at);
+  if (m) {
+    const el = $("crew-" + m.id); if (el) { el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop"); }
+    sfx.tap(); speak(m.say); toast(`${m.name}: ${m.say}`); return false;
+  }
+  const o = occMap().get(keyOf(x, y));
+  townUI.shop = null;
+  if (o) { townUI.sel = o.kind === "b" ? { kind: "b", id: o.id } : { kind: "d", idx: o.idx }; sfx.tap(); }
+  else townUI.sel = null;
+  return true;
+}
+function startHold(hold) { townUI.hold = hold; townUI.sel = null; townUI.shop = null; }
 $("town").addEventListener("click", e => {
+  if (e.target.closest("#fhit")) { if (onFieldTap(e)) { townSig = ""; renderTown(); } return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const act = b.dataset.act, id = b.dataset.id, T = state.town;
-  if (act === "sel") { sfx.tap(); townSel = townSel === id ? null : id; }
-  else if (act === "build") { sfx.tap(); townSel = townSel === "build" ? null : "build"; }
-  else if (act === "crew") {
-    const m = CREW.find(x => x.id === id); b.classList.remove("hop"); void b.offsetWidth; b.classList.add("hop"); sfx.tap(); speak(m.say); toast(`${m.name}: ${m.say}`); return;
+  const sl = townUI.sel, h = townUI.hold;
+  if (act === "tab") { sfx.tap(); townUI.tab = id; townUI.shop = null; }
+  else if (act === "pick") {
+    sfx.tap();
+    if (b.dataset.kind === "b" && T.placed[id]) { townUI.sel = { kind: "b", id }; townUI.shop = null; }
+    else { townUI.shop = { kind: b.dataset.kind, id }; townUI.sel = null; }
   } else if (act === "collect") {
-    if (!tBuilt().length) { townSel = "build"; }
-    else if (T.collect === todayStr()) { toast("きょうの ごほうびは もう もらったよ。また あした!"); return; }
-    else { const n = tIncome(); T.collect = todayStr(); addStars(n); sfx.coin(); toast(`🎁 まちの ごほうび ⭐+${n}`); save(); renderZukan(); }
-  } else if (act === "make") {
-    const d = tDef(id);
-    if (tBuilt().length >= tCap()) { sfx.ng(); toast("もう いっぱい。かんじを ふやすと ひろがるよ"); return; }
-    if (state.stars < d.cost[0]) { sfx.ng(); toast(`⭐が たりないよ(あと ${d.cost[0] - state.stars}こ)`); return; }
-    state.stars -= d.cost[0]; T.b[id] = 1; if (!T.order.includes(id)) T.order.push(id);
-    townSel = id; townFlash = id; sfx.badge(); toast(`🏗️ ${d.name} が できたよ!`); checkBadges(); save(); renderZukan();
+    if (!tBuilt().length) { toast("まず たてものを かって おこう!"); return; }
+    if (T.collect === todayStr()) { toast("きょうの ごほうびは もう もらったよ。また あした!"); return; }
+    const n = tIncome(); T.collect = todayStr(); addStars(n); sfx.coin(); toast(`🎁 まちの ごほうび ⭐+${n}`); save(); renderZukan();
+  } else if (act === "shopbuy") {
+    const sh = townUI.shop; if (!sh) return;
+    if (sh.kind === "b") {
+      const d = tDef(sh.id);
+      if (state.stars < d.cost[0]) { sfx.ng(); toast(`⭐が たりないよ(あと ${d.cost[0] - state.stars}こ)`); return; }
+      state.stars -= d.cost[0]; T.b[sh.id] = 1; if (!T.order.includes(sh.id)) T.order.push(sh.id);
+      sfx.badge(); checkBadges(); save(); renderZukan(); startHold({ kind: "b", id: sh.id, ghost: null, paid: 1 }); toast(`${d.name}を てにいれた! どこに おく?`);
+    } else {
+      const d = dDef(sh.id);
+      if (state.stars < d.p) { sfx.ng(); toast(`⭐が たりないよ(あと ${d.p - state.stars}こ)`); return; }
+      state.stars -= d.p; sfx.coin(); save(); renderZukan(); startHold({ kind: "d", id: sh.id, ghost: null, paid: 1 });
+    }
+  } else if (act === "shopput") {
+    const sh = townUI.shop; if (!sh) return; sfx.tap();
+    if (sh.kind === "b") startHold({ kind: "b", id: sh.id, ghost: null });
+    else startHold({ kind: "d", id: sh.id, ghost: null, fromInv: 1 });
+  } else if (act === "pathmode") { sfx.tap(); startHold({ kind: "path" }); }
+  else if (act === "holdend") {
+    if (h && h.kind === "d" && h.paid) { T.dinv[h.id] = (T.dinv[h.id] || 0) + 1; toast("しまっておいたよ"); save(); }
+    townUI.hold = null; sfx.tap();
+  } else if (act === "put") {
+    if (!h) return; const info = holdInfo(), g = geom();
+    if (!ghostOk(h, info, g)) { sfx.ng(); return; }
+    const { x, y } = h.ghost;
+    if (h.kind === "b") T.placed[h.id] = { x, y, flip: 0 };
+    else if (h.kind === "d") { T.decor.push({ d: h.id, x, y, flip: 0 }); if (h.fromInv) T.dinv[h.id] = Math.max(0, (T.dinv[h.id] || 0) - 1); }
+    else if (h.kind === "move") { const t = h.ref.kind === "b" ? T.placed[h.ref.id] : T.decor[h.ref.idx]; t.x = x; t.y = y; }
+    townUI.hold = null; sfx.badge(); save(); checkBadges(); renderZukan();
+  } else if (act === "move") {
+    if (!sl) return; sfx.tap(); startHold({ kind: "move", ref: sl, ghost: null });
+  } else if (act === "flip") {
+    if (!sl) return; const t = sl.kind === "b" ? T.placed[sl.id] : T.decor[sl.idx]; if (t) t.flip = t.flip ? 0 : 1; sfx.tap(); save();
+  } else if (act === "store") {
+    if (!sl) return; sfx.tap();
+    if (sl.kind === "b") delete T.placed[sl.id]; else { const o = T.decor.splice(sl.idx, 1)[0]; if (o) T.dinv[o.d] = (T.dinv[o.d] || 0) + 1; }
+    townUI.sel = null; save();
   } else if (act === "up") {
     const d = tDef(id), c = tNextCost(id);
     if (c === null) return;
     if (state.stars < c) { sfx.ng(); toast(`⭐が たりないよ(あと ${c - state.stars}こ)`); return; }
-    state.stars -= c; T.b[id]++; townFlash = id; sfx.badge(); toast(`⬆️ ${d.name} が Lv.${T.b[id]} に なったよ!`); checkBadges(); save(); renderZukan();
+    state.stars -= c; T.b[id]++; sfx.badge(); toast(`⬆️ ${d.name} が Lv.${T.b[id]} に なったよ!`); checkBadges(); save(); renderZukan();
   }
-  townSig = ""; renderTown(); renderGame();
+  townSig = ""; renderTown(); renderHomeExtras();
 });
+function crewTick() {                 // なかまが フィールドを あるく
+  if (curScreen !== "town" || document.hidden || !$("fcv")) return;
+  const g = geom(), occ = occMap(), taken = new Set(Object.values(crewPos).map(q => keyOf(q.x, q.y)));
+  for (const m of CREW) {
+    const q = crewPos[m.id]; if (!q || gotCount() < m.at || Math.random() > 0.5) continue;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
+    for (const [dx, dy] of dirs) {
+      const nx = q.x + dx, ny = q.y + dy, k = keyOf(nx, ny);
+      if (nx < 0 || ny < 0 || nx >= g.N || ny >= g.N || occ.has(k) || taken.has(k)) continue;
+      taken.delete(keyOf(q.x, q.y)); taken.add(k); q.x = nx; q.y = ny;
+      const el = $("crew-" + m.id);
+      if (el) { const st = crewStyle(g, m, q); el.style.left = st.left + "px"; el.style.bottom = st.bottom + "px"; el.style.zIndex = st.z; }
+      break;
+    }
+  }
+}
+setInterval(crewTick, 1400);
+window.addEventListener("resize", () => { if (curScreen === "town") { townSig = ""; renderTown(); } });
 
 // ---- きろくの コード(コピーして とっておく / あとで もどす) ----
 function makeCode() {
   const o = { v: 1, stars: state.stars, got: state.got, miss: state.miss, review: state.review, qn: state.qn,
-    owned: state.owned, equip: state.equip, badges: state.badges, town: { b: state.town.b, order: state.town.order }, stat: { earned: state.stat.earned, bestCombo: state.stat.bestCombo, writes: state.stat.writes, revenge: state.stat.revenge, missions: state.stat.missions } };
+    owned: state.owned, equip: state.equip, badges: state.badges, town: (townInit(), { b: state.town.b, order: state.town.order, placed: state.town.placed, decor: state.town.decor, dinv: state.town.dinv, path: state.town.path }), stat: { earned: state.stat.earned, bestCombo: state.stat.bestCombo, writes: state.stat.writes, revenge: state.stat.revenge, missions: state.stat.missions } };
   return "KJ1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 }
 function mergeCode(code) {          // いまの きろくに あわせる(あたらしいほうを のこす)。できなければ false
@@ -1367,6 +1680,23 @@ function mergeCode(code) {          // いまの きろくに あわせる(あ�
     for (const b of TOWN) {
       const v = Math.min(num(o.town.b[b.id], b.lv), b.lv);
       if (v > 0) { state.town.b[b.id] = Math.max(state.town.b[b.id] || 0, v); if (!state.town.order.includes(b.id)) state.town.order.push(b.id); }
+    }
+    const T = state.town, tt = o.town;
+    if (tt.placed && typeof tt.placed === "object") T.layoutV = 2;      // 置いた ばしょも うけつぐ
+    townInit();
+    if (!Object.keys(T.placed).length && tt.placed && typeof tt.placed === "object")
+      for (const id in tt.placed) { const q = tt.placed[id]; if (T.b[id] && FP[id] && q && Number.isInteger(q.x) && Number.isInteger(q.y)) T.placed[id] = { x: q.x, y: q.y, flip: q.flip ? 1 : 0 }; }
+    if (!T.decor.length && Array.isArray(tt.decor))
+      for (const od of tt.decor.slice(0, 200)) { const d = od && dDef(od.d); if (d && !d.flat && Number.isInteger(od.x) && Number.isInteger(od.y)) T.decor.push({ d: od.d, x: od.x, y: od.y, flip: od.flip ? 1 : 0 }); }
+    if (!T.path.length && Array.isArray(tt.path)) T.path = tt.path.filter(k => /^\d{1,2},\d{1,2}$/.test(k)).slice(0, 200);
+    for (const k in (tt.dinv || {})) { const d = dDef(k); if (d && !d.flat) T.dinv[k] = Math.max(T.dinv[k] || 0, Math.min(99, Math.max(0, Math.floor(+tt.dinv[k]) || 0))); }
+    townInit();
+    if (!(tt.placed && typeof tt.placed === "object")) {                 // 置き場所の ない 古い コード: じどうで ならべる
+      const occ = new Set(occMap().keys());
+      for (const id of Object.keys(T.b).filter(i => FP[i] && !T.placed[i]).sort((x, y) => FP[y] - FP[x])) {
+        const pos = findSpot(FP[id], tN(), occ);
+        if (pos) { T.placed[id] = { x: pos.x, y: pos.y, flip: 0 }; addCells(occ, pos.x, pos.y, FP[id]); }
+      }
     }
     townSig = "";
   }
